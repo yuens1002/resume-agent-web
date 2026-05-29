@@ -547,12 +547,141 @@ body.voice-sans .prose.small { font-size: 16px; }
 .thinking .dot:nth-child(3) { animation-delay: .32s; }
 @keyframes think { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) {
-  .thinking .dot, .turn-anim, .avail .pulse, .sbar-fill, .gauge circle { animation: none !important; transition: none !important; }
+  .thinking .dot, .turn-anim, .answer-fade, .avail .pulse, .sbar-fill, .gauge circle { animation: none !important; transition: none !important; }
 }
 .footlink { background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); cursor: pointer; }
 .footlink:hover { color: var(--accent-ink); }
 .err-note { color: #b0703e; font-size: 12.5px; font-family: var(--mono); }
 
-/* answer legibility: paragraph rhythm + on-brand bold (markdown-lite, bold only) */
-.answer-rich { display: flex; flex-direction: column; gap: 12px; }
-.prose strong { font-weight: 600; }
+/* ============================================================
+   Design-system additions (from prototype/styles.css):
+   the .t-* type scale + the .richtext prose scope. Tokens (:root) and
+   component styles (.chip/.btn/.badge/.src) already live above, so only the
+   reusable type scale + prose scope are pulled in here.
+   ============================================================ */
+
+.t-display { font-family: var(--serif); font-weight: 500; font-size: 54px; line-height: 1.05; letter-spacing: -.02em; }
+.t-h1      { font-family: var(--serif); font-weight: 500; font-size: 38px; line-height: 1.12; letter-spacing: -.018em; }
+.t-h2      { font-family: var(--serif); font-weight: 560; font-size: 27px; line-height: 1.1;  letter-spacing: -.015em; }
+.t-h3      { font-family: var(--serif); font-weight: 560; font-size: 20px; line-height: 1.1;  letter-spacing: -.01em; }
+.t-prose   { font-family: var(--serif); font-weight: 400; font-size: 20px; line-height: 1.5;  letter-spacing: -.003em; }
+.t-lede    { font-family: var(--serif); font-weight: 400; font-size: 19px; line-height: 1.5; color: var(--ink-2); }
+.t-body    { font-family: var(--sans);  font-weight: 400; font-size: 16px; line-height: 1.55; }
+.t-ui      { font-family: var(--sans);  font-weight: 500; font-size: 14px; line-height: 1.4; }
+.t-small   { font-family: var(--sans);  font-weight: 400; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.t-eyebrow { font-family: var(--mono);  font-weight: 400; font-size: 11px; line-height: 1.4; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+.t-label   { font-family: var(--mono);  font-weight: 400; font-size: 10.5px; line-height: 1.4; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.t-data    { font-family: var(--mono);  font-weight: 400; font-size: 11.5px; line-height: 1.4; color: var(--ink-2); }
+
+/* ---------- rich text / prose scope ---------- */
+/* Drop .richtext on any container of flowing editorial content. */
+.richtext { color: var(--ink); max-width: 68ch; }
+.richtext > *:first-child { margin-top: 0; }
+.richtext > *:last-child { margin-bottom: 0; }
+
+.richtext h1 {
+  font-family: var(--serif); font-weight: 500; font-size: 40px; line-height: 1.12;
+  letter-spacing: -.018em; margin: 0 0 .5em; text-wrap: balance;
+}
+.richtext h2 {
+  font-family: var(--serif); font-weight: 560; font-size: 29px; line-height: 1.16;
+  letter-spacing: -.015em; margin: 1.5em 0 .45em; text-wrap: balance;
+}
+.richtext h3 {
+  font-family: var(--serif); font-weight: 560; font-size: 22px; line-height: 1.25;
+  letter-spacing: -.01em; margin: 1.4em 0 .4em;
+}
+.richtext h4 {
+  font-family: var(--serif); font-weight: 600; font-size: 18px; line-height: 1.3;
+  letter-spacing: -.005em; margin: 1.4em 0 .35em;
+}
+.richtext h5 {
+  font-family: var(--sans); font-weight: 600; font-size: 15px; line-height: 1.4;
+  letter-spacing: 0; margin: 1.5em 0 .35em;
+}
+.richtext h6 {
+  font-family: var(--mono); font-weight: 500; font-size: 11.5px; line-height: 1.4;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+  margin: 1.6em 0 .5em;
+}
+.richtext h1 + h2, .richtext h2 + h3, .richtext h3 + h4,
+.richtext h4 + h5, .richtext h5 + h6 { margin-top: .6em; }
+
+.richtext p {
+  font-family: var(--serif); font-size: 19px; line-height: 1.6; letter-spacing: -.003em;
+  margin: 0 0 1em; text-wrap: pretty;
+}
+.richtext a {
+  color: var(--accent-ink); text-decoration: underline;
+  text-decoration-color: var(--accent-line); text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px; transition: text-decoration-color .14s;
+}
+.richtext a:hover { text-decoration-color: var(--accent); }
+.richtext strong { font-weight: 600; }
+.richtext em { font-style: italic; }
+.richtext small { font-size: .82em; color: var(--ink-soft); }
+
+.richtext ul, .richtext ol {
+  font-family: var(--serif); font-size: 19px; line-height: 1.6; letter-spacing: -.003em;
+  margin: 0 0 1em; padding-left: 1.4em;
+}
+.richtext li { margin: 0 0 .4em; padding-left: .25em; text-wrap: pretty; }
+.richtext li::marker { color: var(--ink-faint); }
+.richtext ol li::marker { font-family: var(--mono); font-size: .8em; color: var(--accent); }
+.richtext ul ul, .richtext ol ol, .richtext ul ol, .richtext ol ul { margin: .4em 0 .4em; }
+
+.richtext blockquote {
+  margin: 1.2em 0; padding: 4px 0 4px 22px; border-left: 2px solid var(--accent-line);
+}
+.richtext blockquote p {
+  font-style: italic; color: var(--ink-2); font-size: 21px; line-height: 1.5; margin: 0 0 .4em;
+}
+.richtext blockquote cite {
+  font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .03em;
+  color: var(--ink-soft);
+}
+
+.richtext code {
+  font-family: var(--mono); font-size: .82em; color: var(--ink);
+  background: var(--paper-2); border: 1px solid var(--hair); border-radius: 5px;
+  padding: 1.5px 6px;
+}
+.richtext pre {
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--hair-2); border-radius: 10px;
+  padding: 16px 18px; overflow-x: auto; margin: 0 0 1em;
+}
+.richtext pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+.richtext hr { border: none; border-top: 1px solid var(--hair); margin: 2em 0; }
+.richtext figure { margin: 1.4em 0; }
+.richtext figcaption {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .03em; color: var(--ink-soft);
+  margin-top: 8px;
+}
+
+.richtext table {
+  width: 100%; border-collapse: collapse; margin: 0 0 1em;
+  font-family: var(--sans); font-size: 14.5px;
+}
+.richtext th {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--ink-soft); text-align: left; font-weight: 400;
+  border-bottom: 1px solid var(--hair-2); padding: 0 14px 8px 0;
+}
+.richtext td {
+  padding: 9px 14px 9px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); line-height: 1.45;
+}
+.richtext dl { margin: 0 0 1em; }
+.richtext dt { font-family: var(--sans); font-weight: 600; font-size: 15px; margin-top: .8em; }
+.richtext dd { font-family: var(--serif); font-size: 18px; line-height: 1.55; margin: .2em 0 0; color: var(--ink-2); }
+
+/* density variant for cards / answers */
+.richtext.compact p, .richtext.compact ul, .richtext.compact ol { font-size: 16px; line-height: 1.55; }
+.richtext.compact h1 { font-size: 30px; }
+.richtext.compact h2 { font-size: 23px; }
+.richtext.compact h3 { font-size: 18px; }
+
+/* answer fades + rises in when it replaces the thinking indicator (no typewriter) */
+.answer-fade { animation: ansrise .42s cubic-bezier(.2,.7,.3,1); }
+@keyframes ansrise { from { opacity: 0; transform: translateY(8px); } }
