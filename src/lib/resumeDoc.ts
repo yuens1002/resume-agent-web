@@ -7,7 +7,7 @@ const esc = (s: unknown): string =>
 /** Skills may arrive as a flat string[] or as {category,items}[] — normalize to flat list. */
 function flatSkills(skills: ResumeResponse['skills']): string[] {
   if (!Array.isArray(skills)) return []
-  if (skills.length && typeof skills[0] === 'string') return skills as unknown as string[]
+  if (skills.length && typeof skills[0] === 'string') return skills as string[]
   return (skills as BackendSkill[]).flatMap((s) => s.items ?? [])
 }
 
@@ -93,10 +93,11 @@ export function buildResumeHTML(resume: ResumeResponse, tailoredTitle: string): 
     )
     .join('')
 
-  const rubric = resume._rubric
-  const rubricBadge = rubric
-    ? `<span class="badge">rubric ${esc(rubric.total)}/10 · ${rubric.passed ? 'passed' : 'draft'}</span>`
-    : ''
+  const rubric = resume.rubric_meta ?? resume._rubric
+  const rubricBadge =
+    rubric && typeof rubric.total === 'number'
+      ? `<span class="badge">rubric ${esc(rubric.total)}/10 · ${rubric.passed ? 'passed' : 'draft'}</span>`
+      : ''
 
   return `${HOST}<title>${esc(c.name)} — ${esc(tailoredTitle)}</title>${FONTS}<style>${DOC_CSS}</style></head>
   <body>

@@ -99,10 +99,13 @@ export interface ResumeRubric {
 export interface ResumeResponse {
   contact: BackendContact
   summary: string
-  skills: BackendSkill[]
+  // The /resume writer may return a flat string[] of skills (live backend) or {category,items}[].
+  skills: BackendSkill[] | string[]
   employment: BackendEmployment[]
   education: BackendEducation[]
   projects: BackendProject[]
+  // Rubric arrives as `rubric_meta` on the live backend (older code used `_rubric`).
+  rubric_meta?: ResumeRubric
   _rubric?: ResumeRubric
 }
 
