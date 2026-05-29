@@ -262,12 +262,12 @@ body.voice-sans .prose.small { font-size: 16px; }
 .plist { display: flex; flex-direction: column; }
 .prow {
   display: flex; align-items: center; gap: 16px;
-  padding: 15px 4px; border-top: 1px solid var(--hair);
+  padding: 15px 22px; border-top: 1px solid var(--hair);
   text-align: left; background: none; border-left: 0; border-right: 0; border-bottom: 0; width: 100%;
   transition: padding .14s;
 }
 .prow:first-child { border-top: 0; }
-.prow:hover { padding-left: 10px; }
+.prow:hover { padding-left: 28px; }
 .prow:hover .prow-name { color: var(--accent-ink); }
 .prow-thumb {
   flex: none; width: 52px; height: 52px; border-radius: 10px; overflow: hidden;
