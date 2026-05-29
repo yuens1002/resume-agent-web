@@ -1,13 +1,40 @@
 import { useEffect, useState } from 'react'
 import type { Turn as TurnType } from '../lib/types.ts'
 import { INSTANT } from '../lib/motion.ts'
+import { sanitizeAnswer } from '../lib/answer.ts'
 import { Avatar, SourcePills, FollowupChips } from './ui.tsx'
 import { WorkResult, AboutResult } from './cards.tsx'
 import { MatchResume } from './MatchResume.tsx'
 
-/* Token-by-token reveal of the agent's answer (skipped under reduced-motion / ?instant). */
+/* Markdown-lite: bold spans only (no lists/headings/links — no design surface for those). */
+function renderInline(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((seg, i) => {
+    const m = /^\*\*([^*]+)\*\*$/.exec(seg)
+    return m ? <strong key={i}>{m[1]}</strong> : seg
+  })
+}
+
+/* Split on blank lines into paragraphs; cursor rides the last one while typing. */
+function renderRich(text: string, done: boolean) {
+  const paras = text.split(/\n{2,}/)
+  return (
+    <div className="answer-rich">
+      {paras.map((p, i) => (
+        <p className="prose" key={i}>
+          {renderInline(p)}
+          {!done && i === paras.length - 1 && <span className="cursor" />}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+/* Token-by-token reveal (skipped under reduced-motion / ?instant). Sanitizes the
+   backend's cited answer to clean prose, and adapts speed so long answers finish
+   in ~2.5s instead of crawling token-by-token. */
 function AnswerBody({ text, onDone }: { text: string; onDone?: () => void }) {
-  const [shown, setShown] = useState(INSTANT ? text : '')
+  const clean = sanitizeAnswer(text)
+  const [shown, setShown] = useState(INSTANT ? clean : '')
   const [done, setDone] = useState(INSTANT)
 
   useEffect(() => {
@@ -15,13 +42,14 @@ function AnswerBody({ text, onDone }: { text: string; onDone?: () => void }) {
       onDone?.()
       return
     }
-    const tokens = text.split(/(\s+)/)
+    const tokens = clean.split(/(\s+)/)
+    const step = Math.max(2, Math.ceil(tokens.length / 120)) // cap total reveal at ~2.5s
     let i = 0
     let cancelled = false
     let timer: ReturnType<typeof setTimeout>
     const tick = () => {
       if (cancelled) return
-      i += 2
+      i += step
       setShown(tokens.slice(0, i).join(''))
       if (i < tokens.length) timer = setTimeout(tick, 22)
       else {
@@ -38,12 +66,7 @@ function AnswerBody({ text, onDone }: { text: string; onDone?: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  return (
-    <p className="prose">
-      {shown}
-      {!done && <span className="cursor" />}
-    </p>
-  )
+  return renderRich(shown, done)
 }
 
 function Thinking() {
