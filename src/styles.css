@@ -240,13 +240,11 @@ body.voice-sans .prose.small { font-size: 16px; }
   border-left: 1px solid var(--hair-2);
   display: flex; align-items: center; justify-content: center;
 }
-.feat-art .ph {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
-  color: color-mix(in oklab, var(--accent) 55%, var(--ink-soft));
-  text-transform: uppercase;
-  padding: 6px 11px; border: 1px dashed var(--accent-line); border-radius: 8px;
-  background: color-mix(in oklab, var(--paper) 60%, transparent);
+.feat-art .cover-img {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;
 }
+/* No cover → no art column; the card is a single column (no empty half, no placeholder). */
+.feat--noart { grid-template-columns: 1fr; }
 .btnrow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px; }
 .btn {
   font-family: var(--sans); font-size: 14px; font-weight: 600;
@@ -272,10 +270,12 @@ body.voice-sans .prose.small { font-size: 16px; }
 .prow:hover { padding-left: 10px; }
 .prow:hover .prow-name { color: var(--accent-ink); }
 .prow-thumb {
-  flex: none; width: 52px; height: 52px; border-radius: 10px;
-  background: linear-gradient(135deg, var(--accent-wash), var(--paper-2));
-  border: 1px solid var(--hair-2);
+  flex: none; width: 52px; height: 52px; border-radius: 10px; overflow: hidden;
 }
+/* Show a border only when a cover image is present — empty slots stay invisible
+   (reserve the space, never a tacky placeholder). */
+.prow-thumb:has(.cover-img) { border: 1px solid var(--hair-2); }
+.prow-thumb .cover-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prow-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .prow-name { font-family: var(--serif); font-weight: 560; font-size: 18px; transition: color .14s; }
 .prow-tag { font-size: 13.5px; color: var(--ink-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -147,6 +147,7 @@ export interface ProjectVM {
   impact?: string
   links: { demo?: string; repo?: string }
   featured: boolean
+  cover?: string
 }
 export interface AvailabilityVM {
   show: boolean

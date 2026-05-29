@@ -7,6 +7,7 @@ import type {
   AvailabilityVM,
 } from './types.ts'
 import { SITE_URL, MCP_URL } from './api.ts'
+import { COVERS } from './covers.ts'
 
 const DEFAULT_ROLE = 'Frontend / Full-stack Engineer'
 
@@ -53,6 +54,7 @@ function projectVM(p: PublicProfile['projects'][number], featured: boolean): Pro
     impact: p.impact,
     links: { demo: p.url || undefined, repo: p.repo || undefined },
     featured,
+    cover: COVERS[p.slug],
   }
 }
 

@@ -7,7 +7,7 @@ import { SlidePanel } from './SlidePanel.tsx'
 /* ── Featured case study ── */
 function FeaturedCase({ project, onOpen }: { project: ProjectVM; onOpen: (slug: string) => void }) {
   return (
-    <div className="card feat">
+    <div className={`card feat${project.cover ? '' : ' feat--noart'}`}>
       <div className="feat-info">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Badge>{project.status}</Badge>
@@ -27,9 +27,11 @@ function FeaturedCase({ project, onOpen }: { project: ProjectVM; onOpen: (slug: 
           )}
         </div>
       </div>
-      <div className="feat-art">
-        <span className="ph">product shot</span>
-      </div>
+      {project.cover && (
+        <div className="feat-art">
+          <img className="cover-img" src={project.cover} alt={`${project.name} screenshot`} loading="lazy" />
+        </div>
+      )}
     </div>
   )
 }
@@ -41,7 +43,9 @@ function ProjectList({ projects, onOpen }: { projects: ProjectVM[]; onOpen: (slu
       <div className="plist">
         {projects.map((p) => (
           <button key={p.slug} className="prow" onClick={() => onOpen(p.slug)}>
-            <span className="prow-thumb" />
+            <span className="prow-thumb">
+              {p.cover && <img className="cover-img" src={p.cover} alt="" loading="lazy" />}
+            </span>
             <span className="prow-main">
               <span className="prow-name">{p.name}</span>
               <span className="prow-tag">{p.tagline}</span>
