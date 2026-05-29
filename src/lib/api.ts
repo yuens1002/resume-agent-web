@@ -1,0 +1,71 @@
+import type {
+  PublicProfile,
+  QueryResponse,
+  MatchResponse,
+  ResumeResponse,
+} from './types.ts'
+
+const API_BASE = (import.meta.env.VITE_API_BASE ?? 'https://agent.yuens.me').replace(/\/$/, '')
+
+export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'https://yuens.me').replace(/\/$/, '')
+export const MCP_URL = `${API_BASE}/public-mcp`
+export const AGENT_CARD_URL = `${API_BASE}/.well-known/agent-card.json`
+
+async function postJSON<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new ApiError(res.status, `${path} → ${res.status}`)
+  return res.json() as Promise<T>
+}
+
+export class ApiError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
+/** GET /info — full public profile (replaces the prototype's static profile.js). */
+export async function getProfile(): Promise<PublicProfile> {
+  const res = await fetch(`${API_BASE}/info`, { headers: { Accept: 'application/json' } })
+  if (!res.ok) throw new ApiError(res.status, `/info → ${res.status}`)
+  return res.json() as Promise<PublicProfile>
+}
+
+/** POST /query — grounded answer (JSON mode keeps sources + follow-ups). */
+export function ask(question: string): Promise<QueryResponse> {
+  return postJSON<QueryResponse>('/query', { question })
+}
+
+/** POST /match — deterministic weighted (50/30/20) job-fit score. */
+export function match(job_description: string): Promise<MatchResponse> {
+  return postJSON<MatchResponse>('/match', { job_description })
+}
+
+/**
+ * POST /api/resume — same-origin proxy (server attaches the Bearer key and
+ * collapses the backend SSE stream into one JSON payload). Never hits the
+ * gated backend directly from the browser.
+ */
+export async function generateResume(job_description: string): Promise<ResumeResponse> {
+  const res = await fetch('/api/resume', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ job_description }),
+  })
+  if (!res.ok) {
+    let detail = `/api/resume → ${res.status}`
+    try {
+      const j = (await res.json()) as { error?: string }
+      if (j?.error) detail = j.error
+    } catch {
+      /* ignore */
+    }
+    throw new ApiError(res.status, detail)
+  }
+  return res.json() as Promise<ResumeResponse>
+}
