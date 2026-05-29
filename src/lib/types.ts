@@ -44,6 +44,7 @@ export interface BackendProject {
   started?: string
   url?: string
   repo?: string
+  cover?: string
 }
 export interface BackendAvailability {
   seeking: boolean
