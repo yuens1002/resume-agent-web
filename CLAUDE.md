@@ -33,7 +33,7 @@ Single-page "live résumé" SPA for Sunny Yuen. Product + architecture detail is
   `VITE_SITE_URL=https://www.yuens.me`.
 - Server (runtime, **secret**): `RESUME_AGENT_API_KEY` (= resume-agent `API_KEY`),
   `RESUME_API_BASE`, `PORT`.
-- Set on **both** the `web` and `web-staging` Railway services. Never commit secrets; the
+- Set on the `web` Railway service (the only cloud env). Never commit secrets; the
   client bundle must never contain the key.
 
 ## Conventions

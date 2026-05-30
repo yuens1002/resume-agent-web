@@ -30,7 +30,7 @@ system is the hand-authored `src/styles.css` (ported from the prototype — see
 ```bash
 npm install
 cp .env.example .env      # fill RESUME_AGENT_API_KEY for the résumé proxy
-npm run dev               # vite (5173) + tsx server (8787); /api proxied to the server
+npm run dev               # vite (5000) + tsx server (8787); /api proxied to the server
 ```
 
 Append `?instant=1` to disable the typewriter/entrance animations while building.

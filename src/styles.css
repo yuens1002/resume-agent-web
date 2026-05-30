@@ -554,7 +554,8 @@ body.voice-sans .prose.small { font-size: 16px; }
 }
 /* primary starter chip: a single attention cue on arrival (pop + accent ripple),
    then it rests — a one-time invitation, not an ongoing attention grabber. Replaces
-   the solid fill that read as "already selected". Off under reduced motion. */
+   the solid fill that read as "already selected". The animation is disabled under
+   reduced motion; the static accent border remains. */
 .chip--hint { border-color: var(--accent-line); animation: chip-hint 1.3s cubic-bezier(.22, .68, .32, 1) .5s both; }
 @keyframes chip-hint {
   0%   { transform: scale(1);    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 45%, transparent); }
