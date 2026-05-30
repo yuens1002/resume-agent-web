@@ -178,6 +178,9 @@ body.voice-sans .prose.small { font-size: 16px; }
   color: var(--ink-2);
 }
 .followups { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+/* Follow-up chips carry long backend questions — let them wrap instead of forcing
+   a wide nowrap pill that overflows narrow viewports (and scrolls the whole page). */
+.followups .chip { white-space: normal; max-width: 100%; text-align: left; }
 
 /* chips */
 .chip {
