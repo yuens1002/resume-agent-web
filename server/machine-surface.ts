@@ -29,7 +29,11 @@ let cached: PublicProfile | null = null
 /** Fetch /info into the in-memory cache; keep last-known on failure. */
 export async function refreshProfile(): Promise<void> {
   try {
-    const res = await fetch(`${RESUME_API_BASE}/info`, { headers: { Accept: 'application/json' } })
+    // Bounded timeout so a stalled backend can't hang server startup; keep last-known on failure.
+    const res = await fetch(`${RESUME_API_BASE}/info`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(5000),
+    })
     if (res.ok) cached = (await res.json()) as PublicProfile
     else console.warn('[machine] /info responded', res.status)
   } catch (err) {
@@ -96,7 +100,8 @@ export function buildJsonLd(p: PublicProfile): string {
       })),
     },
   }
-  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
+  // Escape `<` so a profile value containing `</script>` can't break out of the tag.
+  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
 }
 
 // ── discovery links + JSON-LD for <head> ──
