@@ -550,8 +550,19 @@ body.voice-sans .prose.small { font-size: 16px; }
 .thinking .dot:nth-child(3) { animation-delay: .32s; }
 @keyframes think { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) {
-  .thinking .dot, .turn-anim, .answer-fade, .avail .pulse, .sbar-fill, .gauge circle { animation: none !important; transition: none !important; }
+  .thinking .dot, .turn-anim, .answer-fade, .avail .pulse, .sbar-fill, .gauge circle, .chip--hint { animation: none !important; transition: none !important; }
 }
+/* primary starter chip: a single attention cue on arrival (pop + accent ripple),
+   then it rests — a one-time invitation, not an ongoing attention grabber. Replaces
+   the solid fill that read as "already selected". The animation is disabled under
+   reduced motion; the static accent border remains. */
+.chip--hint { border-color: var(--accent-line); animation: chip-hint 1.3s cubic-bezier(.22, .68, .32, 1) .5s both; }
+@keyframes chip-hint {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 45%, transparent); }
+  30%  { transform: scale(1.07); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 12px color-mix(in oklab, var(--accent) 0%, transparent); }
+}
+
 .footlink { background: none; border: 0; padding: 0; font: inherit; color: var(--ink-2); cursor: pointer; }
 .footlink:hover { color: var(--accent-ink); }
 .err-note { color: #b0703e; font-size: 12.5px; font-family: var(--mono); }

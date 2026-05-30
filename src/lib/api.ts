@@ -11,10 +11,10 @@ export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'https://yuens.me').re
 export const MCP_URL = `${API_BASE}/public-mcp`
 export const AGENT_CARD_URL = `${API_BASE}/.well-known/agent-card.json`
 
-async function postJSON<T>(path: string, body: unknown): Promise<T> {
+async function postJSON<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new ApiError(res.status, `${path} → ${res.status}`)
@@ -36,9 +36,14 @@ export async function getProfile(): Promise<PublicProfile> {
   return res.json() as Promise<PublicProfile>
 }
 
-/** POST /query — grounded answer (JSON mode keeps sources + follow-ups). */
+/**
+ * POST /query — grounded answer (JSON mode keeps sources + follow-ups).
+ * The `x-agent-type: human` header opts into resume-agent's conversational answer
+ * mode (short prose, no inline [n] markers / Sources block) once it ships — it's
+ * ignored until then (CORS-verified to allow the header), so no redeploy needed.
+ */
 export function ask(question: string): Promise<QueryResponse> {
-  return postJSON<QueryResponse>('/query', { question })
+  return postJSON<QueryResponse>('/query', { question }, { 'x-agent-type': 'human' })
 }
 
 /** POST /match — deterministic weighted (50/30/20) job-fit score. */
