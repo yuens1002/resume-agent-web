@@ -12,6 +12,13 @@ import { Turn as TurnView } from './components/Thread.tsx'
 import { ProjectDetail } from './components/cards.tsx'
 import { AgentMenu } from './components/AgentMenu.tsx'
 
+// Phrases that mean "open the match/tailor tool" rather than "answer a question".
+// These bypass /query and render the JD-paste UI directly (no confused LLM reply).
+const FIT_RE =
+  /\b(match\s+(a\s+)?job|tailor\s+(my|a)\s+(r[eé]sum[eé]?|cv)|score\s+(the\s+)?fit|score\s+a\s+job|paste\s+(a|the|my)\s+(job|jd)|job\s+description|check\s+(my\s+)?fit|am\s+i\s+a\s+(good\s+)?fit)\b/i
+const FIT_INTRO =
+  "Paste a job description below — or pick a sample — and I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain). If it's a strong match, I can tailor a résumé to that exact role."
+
 export function App() {
   const [profile, setProfile] = useState<ProfileVM | null>(null)
   const [loadErr, setLoadErr] = useState(false)
@@ -49,9 +56,29 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  // Lock background scroll while an overlay is open (prevents the double scrollbar
+  // where the panel and the page both scroll).
+  useEffect(() => {
+    const open = menu || detail !== null
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menu, detail])
+
   const ask = useCallback((q: string) => {
     const key = `${Date.now()}-${seq.current++}`
     setMenu(false)
+
+    // Tool-trigger phrases open the match/tailor UI directly — no /query round-trip.
+    if (FIT_RE.test(q)) {
+      setTurns((prev) => [
+        ...prev,
+        { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], followups: [], render: 'fit', pending: false },
+      ])
+      return
+    }
+
     setTurns((prev) => [
       ...prev,
       { key, q, answer: '', confidence: 'high', sources: [], followups: [], render: resolveRender(q), pending: true },

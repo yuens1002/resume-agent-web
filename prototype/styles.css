@@ -1,0 +1,318 @@
+/* ============================================================
+   yuen.me — Typography System
+   Newsreader (voice) · Public Sans (interface) · JetBrains Mono (data)
+   Tokens, type scale, and the .richtext prose scope.
+   Load Google Fonts:
+   https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,560;0,6..72,600;1,6..72,400&family=Public+Sans:wght@400;500;550;600;700&family=JetBrains+Mono:wght@400;500&display=swap
+   ============================================================ */
+
+:root {
+    --paper:    #f5f2ea;
+    --paper-2:  #efebe1;
+    --surface:  #fbfaf6;
+    --ink:      #262420;
+    --ink-2:    #4a463e;
+    --ink-soft: #807a6e;
+    --ink-faint:#b6afa1;
+    --hair:     #e0dacd;
+    --hair-2:   #d4cdbd;
+    --accent:   #3d5a80;
+    --accent-ink:#2f4866;
+    --accent-wash: color-mix(in oklab, var(--accent) 12%, var(--paper));
+    --accent-line: color-mix(in oklab, var(--accent) 30%, var(--hair));
+    --good:     #4a6b52;
+
+    --serif: "Newsreader", Georgia, serif;
+    --sans:  "Public Sans", system-ui, sans-serif;
+    --mono:  "JetBrains Mono", ui-monospace, monospace;
+
+    --shadow-sm: 0 1px 2px rgba(38,36,32,.05), 0 1px 1px rgba(38,36,32,.04);
+    --shadow-md: 0 6px 22px -10px rgba(38,36,32,.22), 0 2px 6px rgba(38,36,32,.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--accent-wash); }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px; }
+
+  /* ---------- shared label / eyebrow ---------- */
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--accent-ink);
+  }
+  .mlabel {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--ink-faint);
+  }
+
+  /* ---------- masthead ---------- */
+  header.mast {
+    border-bottom: 1px solid var(--hair);
+    padding: 80px 0 46px;
+  }
+  .mast h1 {
+    font-family: var(--serif); font-weight: 500; font-size: 54px; line-height: 1.05;
+    letter-spacing: -.02em; margin: 18px 0 0; max-width: 16ch; text-wrap: balance;
+  }
+  .mast .lede {
+    font-family: var(--serif); font-size: 21px; line-height: 1.5; color: var(--ink-2);
+    max-width: 56ch; margin: 20px 0 0; text-wrap: pretty;
+  }
+  .mast .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 30px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); letter-spacing: .02em;
+  }
+  .mast .meta b { color: var(--ink-2); font-weight: 500; }
+
+  /* ---------- section frame ---------- */
+  section { padding: 64px 0; border-bottom: 1px solid var(--hair); }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 38px; }
+  .sec-head .no {
+    font-family: var(--mono); font-size: 12px; color: var(--accent);
+    letter-spacing: .04em;
+  }
+  .sec-head h2 {
+    font-family: var(--serif); font-weight: 560; font-size: 30px; line-height: 1.1;
+    letter-spacing: -.015em; margin: 0;
+  }
+  .sec-head .h-note { margin-left: auto; max-width: 42ch; font-size: 14px; color: var(--ink-soft); line-height: 1.5; }
+
+  /* ---------- typeface cards ---------- */
+  .faces { display: grid; gap: 22px; }
+  .face {
+    background: var(--surface); border: 1px solid var(--hair-2); border-radius: 14px;
+    box-shadow: var(--shadow-sm); padding: 30px 34px;
+    display: grid; grid-template-columns: 1fr; gap: 22px;
+  }
+  .face-top { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; }
+  .face-role {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--paper); background: var(--accent); padding: 5px 10px; border-radius: 6px;
+    align-self: center;
+  }
+  .face-role.sans { background: var(--ink); }
+  .face-role.mono { background: var(--ink-soft); }
+  .face-name { display: flex; flex-direction: column; gap: 3px; }
+  .face-name .nm { font-family: var(--serif); font-weight: 560; font-size: 22px; letter-spacing: -.01em; }
+  .face-name .nm.s { font-family: var(--sans); font-weight: 600; }
+  .face-name .nm.m { font-family: var(--mono); font-weight: 500; font-size: 19px; }
+  .face-name .desc { font-size: 13.5px; color: var(--ink-soft); }
+  .face-specimen { line-height: .98; color: var(--ink); }
+  .face-specimen .big-serif { font-family: var(--serif); font-size: 76px; font-weight: 500; letter-spacing: -.02em; }
+  .face-specimen .big-sans  { font-family: var(--sans);  font-size: 64px; font-weight: 600; letter-spacing: -.02em; }
+  .face-specimen .big-mono  { font-family: var(--mono);  font-size: 52px; font-weight: 500; letter-spacing: -.02em; }
+  .glyphs { font-size: 15px; color: var(--ink-2); letter-spacing: .01em; word-spacing: .04em; line-height: 1.7; }
+  .glyphs.serif { font-family: var(--serif); }
+  .glyphs.sans  { font-family: var(--sans); }
+  .glyphs.mono  { font-family: var(--mono); }
+  .weights { display: flex; flex-wrap: wrap; gap: 7px; }
+  .wpill {
+    font-family: var(--mono); font-size: 10.5px; color: var(--ink-2);
+    border: 1px solid var(--hair-2); border-radius: 999px; padding: 4px 11px; background: var(--paper);
+  }
+
+  /* ---------- type scale ---------- */
+  .scale { display: flex; flex-direction: column; }
+  .row {
+    display: grid; grid-template-columns: 132px 1fr; gap: 26px; align-items: baseline;
+    padding: 20px 0; border-top: 1px solid var(--hair);
+  }
+  .row:first-child { border-top: none; }
+  .row .spec {
+    font-family: var(--mono); font-size: 11px; color: var(--ink-soft); line-height: 1.6;
+    padding-top: 6px;
+  }
+  .row .spec .tok { color: var(--accent-ink); display: block; font-size: 11.5px; margin-bottom: 4px; letter-spacing: .02em; }
+  .row .sample { color: var(--ink); min-width: 0; }
+
+  .t-display { font-family: var(--serif); font-weight: 500; font-size: 54px; line-height: 1.05; letter-spacing: -.02em; }
+  .t-h1      { font-family: var(--serif); font-weight: 500; font-size: 38px; line-height: 1.12; letter-spacing: -.018em; }
+  .t-h2      { font-family: var(--serif); font-weight: 560; font-size: 27px; line-height: 1.1;  letter-spacing: -.015em; }
+  .t-h3      { font-family: var(--serif); font-weight: 560; font-size: 20px; line-height: 1.1;  letter-spacing: -.01em; }
+  .t-prose   { font-family: var(--serif); font-weight: 400; font-size: 20px; line-height: 1.5;  letter-spacing: -.003em; }
+  .t-lede    { font-family: var(--serif); font-weight: 400; font-size: 19px; line-height: 1.5; color: var(--ink-2); }
+  .t-body    { font-family: var(--sans);  font-weight: 400; font-size: 16px; line-height: 1.55; }
+  .t-ui      { font-family: var(--sans);  font-weight: 500; font-size: 14px; line-height: 1.4; }
+  .t-small   { font-family: var(--sans);  font-weight: 400; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+  .t-eyebrow { font-family: var(--mono);  font-weight: 400; font-size: 11px; line-height: 1.4; letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+  .t-label   { font-family: var(--mono);  font-weight: 400; font-size: 10.5px; line-height: 1.4; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+  .t-data    { font-family: var(--mono);  font-weight: 400; font-size: 11.5px; line-height: 1.4; color: var(--ink-2); }
+
+  /* ---------- usage / in-context ---------- */
+  .specimens { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .demo {
+    background: var(--surface); border: 1px solid var(--hair-2); border-radius: 14px;
+    box-shadow: var(--shadow-sm); padding: 26px 28px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .demo .demo-tag { align-self: flex-start; }
+  .demo h3 { margin: 0; }
+  .demo-greet-h1 { font-family: var(--serif); font-weight: 500; font-size: 32px; line-height: 1.12; letter-spacing: -.018em; margin: 6px 0 0; text-wrap: balance; }
+  .demo-prose { font-family: var(--serif); font-size: 19px; line-height: 1.5; letter-spacing: -.003em; margin: 0; color: var(--ink); text-wrap: pretty; }
+  .demo-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip {
+    font-family: var(--sans); font-size: 14px; font-weight: 500;
+    padding: 8px 15px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--hair-2); color: var(--ink-2);
+  }
+  .btn {
+    font-family: var(--sans); font-size: 14px; font-weight: 600;
+    padding: 9px 16px; border-radius: 9px; border: 1px solid var(--ink);
+    background: var(--ink); color: var(--paper);
+  }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--hair-2); }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .03em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 7px; background: var(--accent-wash); color: var(--accent-ink);
+  }
+  .meta-line { font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+  .src { font-family: var(--mono); font-size: 11.5px; padding: 3px 9px; border-radius: 7px; background: var(--paper-2); border: 1px solid var(--hair); color: var(--ink-2); }
+
+  /* ---------- principles ---------- */
+  .principles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 40px; }
+  .principle { display: flex; flex-direction: column; gap: 7px; }
+  .principle .pn { font-family: var(--serif); font-weight: 560; font-size: 18px; letter-spacing: -.01em; }
+  .principle p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+  .principle .pn::before {
+    content: attr(data-n); font-family: var(--mono); font-size: 11px; color: var(--accent);
+    margin-right: 9px; letter-spacing: .04em;
+  }
+
+  /* ---------- rich text / prose scope ---------- */
+  /* Drop .richtext on any container of flowing editorial content. */
+  .richtext { color: var(--ink); max-width: 68ch; }
+  .richtext > *:first-child { margin-top: 0; }
+  .richtext > *:last-child { margin-bottom: 0; }
+
+  .richtext h1 {
+    font-family: var(--serif); font-weight: 500; font-size: 40px; line-height: 1.12;
+    letter-spacing: -.018em; margin: 0 0 .5em; text-wrap: balance;
+  }
+  .richtext h2 {
+    font-family: var(--serif); font-weight: 560; font-size: 29px; line-height: 1.16;
+    letter-spacing: -.015em; margin: 1.5em 0 .45em; text-wrap: balance;
+  }
+  .richtext h3 {
+    font-family: var(--serif); font-weight: 560; font-size: 22px; line-height: 1.25;
+    letter-spacing: -.01em; margin: 1.4em 0 .4em;
+  }
+  .richtext h4 {
+    font-family: var(--serif); font-weight: 600; font-size: 18px; line-height: 1.3;
+    letter-spacing: -.005em; margin: 1.4em 0 .35em;
+  }
+  .richtext h5 {
+    font-family: var(--sans); font-weight: 600; font-size: 15px; line-height: 1.4;
+    letter-spacing: 0; margin: 1.5em 0 .35em;
+  }
+  .richtext h6 {
+    font-family: var(--mono); font-weight: 500; font-size: 11.5px; line-height: 1.4;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--ink-soft);
+    margin: 1.6em 0 .5em;
+  }
+  /* tighten a heading that follows another heading */
+  .richtext h1 + h2, .richtext h2 + h3, .richtext h3 + h4,
+  .richtext h4 + h5, .richtext h5 + h6 { margin-top: .6em; }
+
+  .richtext p {
+    font-family: var(--serif); font-size: 19px; line-height: 1.6; letter-spacing: -.003em;
+    margin: 0 0 1em; text-wrap: pretty;
+  }
+  .richtext a {
+    color: var(--accent-ink); text-decoration: underline;
+    text-decoration-color: var(--accent-line); text-underline-offset: 3px;
+    text-decoration-thickness: 1.5px; transition: text-decoration-color .14s;
+  }
+  .richtext a:hover { text-decoration-color: var(--accent); }
+  .richtext strong { font-weight: 600; }
+  .richtext em { font-style: italic; }
+  .richtext small { font-size: .82em; color: var(--ink-soft); }
+
+  .richtext ul, .richtext ol {
+    font-family: var(--serif); font-size: 19px; line-height: 1.6; letter-spacing: -.003em;
+    margin: 0 0 1em; padding-left: 1.4em;
+  }
+  .richtext li { margin: 0 0 .4em; padding-left: .25em; text-wrap: pretty; }
+  .richtext li::marker { color: var(--ink-faint); }
+  .richtext ol li::marker { font-family: var(--mono); font-size: .8em; color: var(--accent); }
+  .richtext ul ul, .richtext ol ol, .richtext ul ol, .richtext ol ul { margin: .4em 0 .4em; }
+
+  .richtext blockquote {
+    margin: 1.2em 0; padding: 4px 0 4px 22px; border-left: 2px solid var(--accent-line);
+  }
+  .richtext blockquote p {
+    font-style: italic; color: var(--ink-2); font-size: 21px; line-height: 1.5; margin: 0 0 .4em;
+  }
+  .richtext blockquote cite {
+    font-family: var(--mono); font-style: normal; font-size: 11.5px; letter-spacing: .03em;
+    color: var(--ink-soft);
+  }
+
+  .richtext code {
+    font-family: var(--mono); font-size: .82em; color: var(--ink);
+    background: var(--paper-2); border: 1px solid var(--hair); border-radius: 5px;
+    padding: 1.5px 6px;
+  }
+  .richtext pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.6; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--hair-2); border-radius: 10px;
+    padding: 16px 18px; overflow-x: auto; margin: 0 0 1em;
+  }
+  .richtext pre code { background: none; border: none; padding: 0; font-size: inherit; }
+
+  .richtext hr {
+    border: none; border-top: 1px solid var(--hair); margin: 2em 0;
+  }
+  .richtext figure { margin: 1.4em 0; }
+  .richtext figcaption {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .03em; color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  .richtext table {
+    width: 100%; border-collapse: collapse; margin: 0 0 1em;
+    font-family: var(--sans); font-size: 14.5px;
+  }
+  .richtext th {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-soft); text-align: left; font-weight: 400;
+    border-bottom: 1px solid var(--hair-2); padding: 0 14px 8px 0;
+  }
+  .richtext td {
+    padding: 9px 14px 9px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); line-height: 1.45;
+  }
+  .richtext dl { margin: 0 0 1em; }
+  .richtext dt { font-family: var(--sans); font-weight: 600; font-size: 15px; margin-top: .8em; }
+  .richtext dd { font-family: var(--serif); font-size: 18px; line-height: 1.55; margin: .2em 0 0; color: var(--ink-2); }
+
+  /* density variant for cards / answers */
+  .richtext.compact p, .richtext.compact ul, .richtext.compact ol { font-size: 16px; line-height: 1.55; }
+  .richtext.compact h1 { font-size: 30px; }
+  .richtext.compact h2 { font-size: 23px; }
+  .richtext.compact h3 { font-size: 18px; }
+
+  footer { padding: 50px 0 80px; }
+  footer .f { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); letter-spacing: .03em; }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 0 22px; }
+    .mast h1 { font-size: 38px; }
+    .sec-head { flex-wrap: wrap; }
+    .sec-head .h-note { margin-left: 0; flex-basis: 100%; }
+    .row { grid-template-columns: 1fr; gap: 10px; }
+    .row .spec { padding-top: 0; }
+    .specimens, .principles { grid-template-columns: 1fr; }
+    .face-specimen .big-serif { font-size: 52px; }
+    .face-specimen .big-sans  { font-size: 46px; }
+    .face-specimen .big-mono  { font-size: 38px; }
+  }

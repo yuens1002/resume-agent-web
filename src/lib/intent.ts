@@ -5,14 +5,13 @@ import type { RenderKind } from './types.ts'
  * but ONLY the `render` decision. The answer text, sources, and follow-ups now come
  * from the real /query response; this just decides which rich card (if any) to attach.
  */
+// 'fit' is NOT here: it's a tool trigger handled explicitly in App (see FIT_RE), not
+// a card attached to a /query answer — otherwise a question mentioning "resume" would
+// spuriously open the match tool.
 const RENDER_INTENTS: { keys: string[]; render: Exclude<RenderKind, null> }[] = [
   {
     render: 'work',
     keys: ['recent work', 'work', 'project', 'projects', 'portfolio', 'built', 'build', 'shipped', 'show me'],
-  },
-  {
-    render: 'fit',
-    keys: ['fit', 'score', 'job description', 'jd', 'match', 'role for', 'good fit', 'resume', 'résumé', 'cv', 'tailor', 'tailored', 'generate'],
   },
   {
     render: 'about',

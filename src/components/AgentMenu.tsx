@@ -39,7 +39,7 @@ export function AgentMenu({ onClose }: { onClose: () => void }) {
             </span>
             <span className="mi-main">
               <span className="mi-t">Agent card</span>
-              <span className="mi-s">{AGENT_CARD_URL.replace(/^https?:\/\//, '')}</span>
+              <span className="mi-s">{new URL(AGENT_CARD_URL).hostname}</span>
             </span>
             <span className="mi-act">A2A</span>
           </a>
