@@ -32,16 +32,18 @@ export function Btn(
 /* ── Chip — starter / follow-up (default|solid) and composer hints (mini) ── */
 export function Chip({
   variant = 'default',
+  hint = false,
   onClick,
   children,
 }: {
   variant?: 'default' | 'solid' | 'mini'
+  hint?: boolean
   onClick?: () => void
   children: ReactNode
 }) {
-  const cls = variant === 'mini' ? 'mini-chip' : variant === 'solid' ? 'chip solid' : 'chip'
+  const base = variant === 'mini' ? 'mini-chip' : variant === 'solid' ? 'chip solid' : 'chip'
   return (
-    <button className={cls} onClick={onClick}>
+    <button className={hint ? `${base} chip--hint` : base} onClick={onClick}>
       {children}
     </button>
   )

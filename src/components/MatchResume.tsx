@@ -5,21 +5,57 @@ import type { MatchResponse } from '../lib/types.ts'
 import { buildResumeHTML, LOADING_HTML, ERROR_HTML } from '../lib/resumeDoc.ts'
 import { Btn, Card, Gauge, ScoreBar } from './ui.tsx'
 
+// Realistic, keyword-dense postings tuned to the profile so the demo produces
+// strong, representative scores (and clears the backend's thin-JD signal).
 const SAMPLE_JDS = [
   {
     id: 'fe',
     label: 'Senior Frontend Engineer',
-    text: 'Senior Frontend Engineer — React, TypeScript, Next.js. Own a design system, drive accessibility (WCAG 2.1 AA), and partner with design. 5+ years building production web apps. Testing culture (Jest, Playwright). Bonus: experience integrating AI/LLM features.',
+    text: `Senior Frontend Engineer
+
+We're hiring a Senior Frontend Engineer to own our design system and ship accessible, high-performance web applications. You'll build and maintain reusable component libraries in React, TypeScript, and Next.js, drive WCAG 2.1 AA accessibility across the product, and partner closely with design and product.
+
+Requirements:
+- 5+ years building production single-page applications
+- Deep React, TypeScript, and Next.js experience
+- Strong testing culture: Jest, React Testing Library, Playwright
+- Comfort with CI/CD, Core Web Vitals and performance optimization
+- REST and GraphQL APIs
+
+Bonus: experience integrating AI/LLM-powered features and streaming UIs.
+
+Stack: React, TypeScript, Next.js, Tailwind CSS, Vitest/Playwright, GitHub Actions, Vercel.`,
   },
   {
     id: 'fs',
     label: 'Full-Stack (AI)',
-    text: "Full-Stack Engineer, AI Products. Ship LLM-powered features end to end — TypeScript, Node, Postgres, and modern React. Experience with agent frameworks, prompt engineering, and streaming UIs. You've taken something from zero to production. Startup pace.",
+    text: `Full-Stack Engineer, AI Products
+
+Join a fast-moving team shipping LLM-powered features end to end. You'll build production UIs in React and Next.js with TypeScript, design and ship Node.js services backed by PostgreSQL and Prisma, and integrate AI/LLM capabilities — agent frameworks, prompt engineering, tool calling, and streaming responses.
+
+Requirements:
+- 5+ years across the full stack (TypeScript, React/Next.js, Node)
+- PostgreSQL and an ORM (Prisma); REST/GraphQL APIs
+- Testing discipline (Jest, Playwright) and CI/CD
+- You've taken AI features from zero to production — real products, not demos
+- High ownership, startup pace
+
+Stack: TypeScript, React, Next.js, Node, PostgreSQL, Prisma, Vercel AI SDK.`,
   },
   {
     id: 'lead',
     label: 'Frontend Lead / Manager',
-    text: 'Frontend Engineering Lead. Manage a team of 4–6, set technical direction, own hiring and mentorship. 8+ years frontend, 3+ leading teams. React/TypeScript at scale, native mobile a plus. Strong product and stakeholder communication.',
+    text: `Frontend Engineering Lead
+
+We're looking for a Frontend Engineering Lead to set technical direction and grow a team of 4–6 engineers. You'll own the architecture of our React/TypeScript/Next.js platform, establish design-system and accessibility (WCAG) standards, drive testing and CI/CD practices, and partner with product and design on the roadmap.
+
+Requirements:
+- 8+ years of frontend engineering, with 3+ years leading or managing teams (hiring, mentorship, performance)
+- Deep React and TypeScript at scale
+- Strong product sense and stakeholder communication
+- Native mobile (React Native) a plus
+
+This is a hands-on leadership role — roughly half architecture and code, half people and process.`,
   },
 ]
 

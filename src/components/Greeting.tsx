@@ -20,7 +20,7 @@ export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
       <p className="lede">{profile.summary}</p>
       <div className="chiprow">
         {STARTERS.map((s, i) => (
-          <Chip key={s} variant={i === 0 ? 'solid' : 'default'} onClick={() => onAsk(s)}>
+          <Chip key={s} hint={i === 0} onClick={() => onAsk(s)}>
             {s}
           </Chip>
         ))}
