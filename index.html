@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="canonical" href="https://www.yuens.me" />
-    <title>Sunny Yuen — a résumé you can talk to</title>
-    <!-- description is replaced server-side with the live profile summary; this is the dev/no-JS fallback -->
-    <meta name="description" content="A live, queryable résumé for Sunny Yuen — frontend / full-stack engineer. Ask questions, score a job's fit, and generate a tailored résumé." />
-    <meta property="og:title" content="Sunny Yuen — a résumé you can talk to" />
-    <meta property="og:description" content="A live, queryable résumé. Ask anything, score a job fit, generate a tailored résumé." />
-    <meta property="og:url" content="https://www.yuens.me" />
+    <!-- canonical/og:url come from VITE_SITE_URL at build; title + description are injected
+         from the live profile at request time. Generic fallbacks below for dev / no-JS. -->
+    <link rel="canonical" href="%VITE_SITE_URL%" />
+    <title>A résumé you can talk to</title>
+    <meta name="description" content="A live, queryable résumé — ask questions, score a job's fit, and generate a tailored résumé." />
+    <meta property="og:title" content="A résumé you can talk to" />
+    <meta property="og:description" content="A live, queryable résumé — ask anything, score a job fit, generate a tailored résumé." />
+    <meta property="og:url" content="%VITE_SITE_URL%" />
     <meta name="theme-color" content="#f5f2ea" />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
