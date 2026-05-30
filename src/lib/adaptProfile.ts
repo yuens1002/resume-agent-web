@@ -83,7 +83,10 @@ export function adaptProfile(raw: PublicProfile): ProfileVM {
   return {
     contact: {
       name: c.name,
-      role: DEFAULT_ROLE,
+      // Derived from the live profile (declared target roles), not hardcoded.
+      role: raw.availability?.preferred_roles?.length
+        ? raw.availability.preferred_roles.join(' / ')
+        : DEFAULT_ROLE,
       email: c.email,
       github: c.github,
       linkedin: c.linkedin,
