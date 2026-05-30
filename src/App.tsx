@@ -15,7 +15,7 @@ import { AgentMenu } from './components/AgentMenu.tsx'
 // Phrases that mean "open the match/tailor tool" rather than "answer a question".
 // These bypass /query and render the JD-paste UI directly (no confused LLM reply).
 const FIT_RE =
-  /\b(match\s+(a\s+)?job|tailor\s+(my|a)\s+(r[eé]sum|cv)|score\s+(the\s+)?fit|score\s+a\s+job|paste\s+(a|the|my)\s+(job|jd)|job\s+description|check\s+(my\s+)?fit|am\s+i\s+a\s+(good\s+)?fit)\b/i
+  /\b(match\s+(a\s+)?job|tailor\s+(my|a)\s+(r[eé]sum[eé]?|cv)|score\s+(the\s+)?fit|score\s+a\s+job|paste\s+(a|the|my)\s+(job|jd)|job\s+description|check\s+(my\s+)?fit|am\s+i\s+a\s+(good\s+)?fit)\b/i
 const FIT_INTRO =
   "Paste a job description below — or pick a sample — and I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain). If it's a strong match, I can tailor a résumé to that exact role."
 
