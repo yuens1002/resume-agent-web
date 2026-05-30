@@ -2,6 +2,15 @@ import { readFile } from 'node:fs/promises'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
+import {
+  refreshProfile,
+  getProfile,
+  buildHeadInjection,
+  buildNoscript,
+  buildLlmsTxt,
+  metaDescription,
+  ROBOTS_TXT,
+} from './machine-surface.ts'
 
 const PORT = parseInt(process.env.PORT ?? '8787', 10)
 const RESUME_API_BASE = (process.env.RESUME_API_BASE ?? 'https://agent.yuens.me').replace(/\/$/, '')
@@ -76,17 +85,61 @@ app.post('/api/resume', async (c) => {
 
 app.get('/healthz', (c) => c.json({ ok: true }))
 
-// Static SPA + client-side fallback (no app routes — any unmatched path serves index.html).
-app.use('/*', serveStatic({ root: './dist' }))
-app.get('*', async (c) => {
-  try {
-    return c.html(await readFile('./dist/index.html', 'utf8'))
-  } catch {
-    return c.text('Build not found. Run `npm run build`.', 500)
-  }
+// ── machine-readable surface (real files, not the SPA shell) ──
+app.get('/robots.txt', (c) => c.text(ROBOTS_TXT))
+app.get('/llms.txt', (c) => {
+  const p = getProfile()
+  if (!p) return c.text('Profile temporarily unavailable.\n', 503)
+  return c.text(buildLlmsTxt(p))
 })
+// The canonical agent surfaces live on the backend — redirect autodiscovery there
+// instead of returning the SPA HTML.
+app.get('/.well-known/agent-card.json', (c) => c.redirect(`${RESUME_API_BASE}/.well-known/agent-card.json`, 302))
+app.get('/openapi.json', (c) => c.redirect(`${RESUME_API_BASE}/openapi.json`, 302))
+
+// Serve the SPA with the machine surface injected: JSON-LD + discovery links in <head>,
+// and a crawlable <noscript> profile in <body> (so a non-JS fetch isn't an empty shell).
+let baseHtml: string | null = null
+async function renderIndex(): Promise<string | null> {
+  if (baseHtml === null) {
+    try {
+      baseHtml = await readFile('./dist/index.html', 'utf8')
+    } catch {
+      return null
+    }
+  }
+  const p = getProfile()
+  if (!p) return baseHtml
+  // Live, keyword-rich SEO description from the profile summary (replaces the static fallback).
+  const desc = metaDescription(p).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+  const setDesc = (_m: string, a: string, b: string) => a + desc + b
+  return baseHtml
+    .replace(/(<meta name="description" content=")[^"]*(")/, setDesc)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, setDesc)
+    .replace('</head>', `${buildHeadInjection(p)}\n</head>`)
+    .replace('</body>', `${buildNoscript(p)}</body>`)
+}
+
+app.get('/', async (c) => {
+  const html = await renderIndex()
+  return html ? c.html(html) : c.text('Build not found. Run `npm run build`.', 500)
+})
+
+// Real static assets (hashed bundles, favicons) straight from disk.
+app.use('/*', serveStatic({ root: './dist' }))
+
+// SPA fallback for client routes — same injected HTML.
+app.get('*', async (c) => {
+  const html = await renderIndex()
+  return html ? c.html(html) : c.text('Build not found. Run `npm run build`.', 500)
+})
+
+// Load the profile into cache before serving, then refresh every 10 min (serve last-known on failure).
+await refreshProfile()
+setInterval(() => void refreshProfile(), 10 * 60_000)
 
 serve({ fetch: app.fetch, port: PORT }, () => {
   console.log(`portfolio server on http://localhost:${PORT}  → proxying /resume to ${RESUME_API_BASE}`)
+  console.log(`[machine] profile cache: ${getProfile() ? 'loaded' : 'EMPTY'} · /robots.txt /llms.txt + JSON-LD/noscript active`)
   if (!RESUME_AGENT_API_KEY) console.warn('[warn] RESUME_AGENT_API_KEY is unset — /api/resume will fail against a key-gated backend.')
 })
