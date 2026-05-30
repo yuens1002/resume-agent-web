@@ -8,3 +8,4 @@ dist
 *.log
 .railway
 .covers
+.*.txt
