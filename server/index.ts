@@ -110,12 +110,17 @@ async function renderIndex(): Promise<string | null> {
   }
   const p = getProfile()
   if (!p) return baseHtml
-  // Live, keyword-rich SEO description from the profile summary (replaces the static fallback).
-  const desc = metaDescription(p).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-  const setDesc = (_m: string, a: string, b: string) => a + desc + b
+  // Title + description come from the live profile (name/summary) — nothing person-specific
+  // is hardcoded in the served HTML, so a fork publishes its own identity automatically.
+  const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+  const desc = escAttr(metaDescription(p))
+  const name = p.contact?.name?.trim()
+  const title = escAttr(name ? `${name} — a résumé you can talk to` : 'A résumé you can talk to')
   return baseHtml
-    .replace(/(<meta name="description" content=")[^"]*(")/, setDesc)
-    .replace(/(<meta property="og:description" content=")[^"]*(")/, setDesc)
+    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, (_m, a, b) => a + title + b)
+    .replace(/(<meta name="description" content=")[^"]*(")/, (_m, a, b) => a + desc + b)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, (_m, a, b) => a + desc + b)
     .replace('</head>', `${buildHeadInjection(p)}\n</head>`)
     .replace('</body>', `${buildNoscript(p)}</body>`)
 }

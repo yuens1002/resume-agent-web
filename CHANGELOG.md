@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- 2026-05-30 — feat(forkable): make the site open-source/forkable — identity-free head, LICENSE, fork README
+  - derive `<title>`/`og:title` from the live profile name and `canonical`/`og:url` from `VITE_SITE_URL` (build-time `%VITE_SITE_URL%`); no person/domain hardcoded in the served HTML
+  - add MIT `LICENSE`; rewrite `README` with the "why this exists" thesis, the OB1/Open Brain lineage + credit, a fork quickstart, and customization guide
+  - `.env.example` reframed as fork guidance (point the URLs at your own resume-agent)
 - 2026-05-30 — feat(seo): machine-readable surface (JSON-LD, noscript, llms.txt) for LLM consumers
   - server injects `schema.org/Person` JSON-LD + a crawlable `<noscript>` profile + discovery `<link>`s, so a non-JS fetch of the site is no longer an empty shell
   - serve real `/robots.txt` (welcomes AI bots) and `/llms.txt` (candidate summary + query endpoints); redirect `/.well-known/agent-card.json` and `/openapi.json` to the backend
