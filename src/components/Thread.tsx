@@ -17,23 +17,30 @@ function AnswerBody({ text, onDone }: { text: string; onDone?: () => void }) {
   const clean = sanitizeAnswer(text)
   const words = clean.match(/\S+\s*/g) ?? [clean]
   const total = words.length
-  const interval = Math.min(15, Math.floor(700 / total))
+  const interval = Math.max(1, Math.min(15, Math.floor(700 / total)))
   const [count, setCount] = useState(INSTANT ? total : 0)
 
   useEffect(() => {
     if (INSTANT) { onDone?.(); return }
-    if (count >= total) { onDone?.(); return }
-    const t = setTimeout(() => setCount((c) => c + 1), interval)
+    if (count >= total) return
+    const t = setTimeout(() => {
+      const next = count + 1
+      setCount(next)
+      if (next >= total) onDone?.()
+    }, interval)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count, total])
 
-  const displayed = count >= total ? clean : words.slice(0, count).join('')
+  const typing = count < total
 
   return (
     <div className="richtext">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayed}</ReactMarkdown>
-      {count < total && <span className="tw-cursor" aria-hidden />}
+      {typing ? (
+        <p>{words.slice(0, count).join('')}<span className="tw-cursor" aria-hidden /></p>
+      ) : (
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{clean}</ReactMarkdown>
+      )}
     </div>
   )
 }
