@@ -61,7 +61,7 @@ export const ERROR_HTML = (msg: string) => `${HOST}<title>Couldn't generate rés
 /** Build the self-contained printable résumé document for the new tab. */
 export function buildResumeHTML(resume: ResumeResponse, tailoredTitle: string): string {
   const c = resume.contact ?? ({} as ResumeResponse['contact'])
-  const contactBits = [c.email, c.github?.replace(/^https?:\/\//, ''), c.linkedin?.replace(/^https?:\/\//, '')]
+  const contactBits = [c.email, c.website?.replace(/^https?:\/\//, ''), c.github?.replace(/^https?:\/\//, ''), c.linkedin?.replace(/^https?:\/\//, '')]
     .filter(Boolean)
     .map((b) => `<span>${esc(b)}</span>`)
     .join('<span class="sep">·</span>')
