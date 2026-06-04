@@ -54,7 +54,8 @@ export const LOADING_HTML = `${HOST}<title>Tailoring résumé…</title>${FONTS}
   @keyframes s{to{transform:rotate(360deg)}}
   .prog{width:220px;height:3px;background:#e0dacd;border-radius:2px;overflow:hidden;margin-top:6px}
   .prog-fill{height:100%;width:0;background:var(--accent-ink);border-radius:2px}
-  .prog-pct{font-family:"JetBrains Mono",monospace;font-size:11px;color:#b6afa1}</style></head>
+  .prog-pct{font-family:"JetBrains Mono",monospace;font-size:11px;color:#b6afa1}
+  @media(prefers-reduced-motion:reduce){.spin{animation:none}.prog{display:none}.prog-pct{display:none}}</style></head>
   <body><div class="load">
     <div class="spin"></div>
     <div>Tailoring résumé…</div>
@@ -63,13 +64,14 @@ export const LOADING_HTML = `${HOST}<title>Tailoring résumé…</title>${FONTS}
   </div>
   <script>
     var s=Date.now(),d=55000,t=92;
+    var rm=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
     function tick(){
       var e=Math.min((Date.now()-s)/d,1),v=t*(1-Math.pow(1-e,3));
       document.getElementById('pf').style.width=v+'%';
       document.getElementById('pp').textContent=Math.round(v)+'%';
       if(e<1)requestAnimationFrame(tick);
     }
-    requestAnimationFrame(tick);
+    if(!rm)requestAnimationFrame(tick);
   </script></body></html>`
 
 export const ERROR_HTML = (msg: string) => `${HOST}<title>Couldn't generate résumé</title><style>${DOC_CSS}
