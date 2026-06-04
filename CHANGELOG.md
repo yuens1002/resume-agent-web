@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- 2026-06-04 — feat(ux): progress bar on résumé load + mobile layout fixes
+  - animated ease-out progress bar (0→92% over 55s) + percentage counter shown while résumé generates
+  - wording: "Tailoring résumé…" (removed "your")
+  - mobile: show `.hdr-role` tagline with text-overflow ellipsis instead of hiding it
+  - mobile: force `.skillgrid` to single column (`grid-template-columns: 1fr`)
+
 - 2026-06-04 — feat(greeting): reorder and retitle starter chips
   - replace "Experience with AI?" with "What are your strengths?" — maps to the recruiter strengths question, surfaces predominant experience across all past and current work
   - replace "Are you available?" with "What's your availability?" — more natural phrasing

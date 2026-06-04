@@ -532,8 +532,9 @@ body.voice-sans .prose.small { font-size: 16px; }
   .feat { grid-template-columns: 1fr; }
   .feat-art { min-height: 130px; border-left: 0; border-top: 1px solid var(--hair-2); order: -1; }
   .fit-cols { grid-template-columns: 1fr; }
+  .skillgrid { grid-template-columns: 1fr; }
   .menu { right: 16px; left: 16px; width: auto; }
-  .hdr-role { display: none; }
+  .hdr-role { overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ============================================================
