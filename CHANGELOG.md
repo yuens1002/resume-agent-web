@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-06-04 — feat(docx): render website field in contact header — positioned after email, before github/linkedin; closes #144
+
 - 2026-05-30 — feat(forkable): make the site open-source/forkable — identity-free head, LICENSE, fork README
   - derive `<title>`/`og:title` from the live profile name and `canonical`/`og:url` from `VITE_SITE_URL` (build-time `%VITE_SITE_URL%`); no person/domain hardcoded in the served HTML
   - add MIT `LICENSE`; rewrite `README` with the "why this exists" thesis, the OB1/Open Brain lineage + credit, a fork quickstart, and customization guide
