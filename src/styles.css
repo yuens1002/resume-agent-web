@@ -550,7 +550,7 @@ body.voice-sans .prose.small { font-size: 16px; }
 .thinking .dot:nth-child(3) { animation-delay: .32s; }
 @keyframes think { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) {
-  .thinking .dot, .turn-anim, .answer-fade, .avail .pulse, .sbar-fill, .gauge circle, .chip--hint { animation: none !important; transition: none !important; }
+  .thinking .dot, .turn-anim, .tw-cursor, .avail .pulse, .sbar-fill, .gauge circle, .chip--hint { animation: none !important; transition: none !important; }
 }
 /* primary starter chip: a single attention cue on arrival (pop + accent ripple),
    then it rests — a one-time invitation, not an ongoing attention grabber. Replaces
@@ -696,6 +696,13 @@ body.voice-sans .prose.small { font-size: 16px; }
 .richtext.compact h2 { font-size: 23px; }
 .richtext.compact h3 { font-size: 18px; }
 
-/* answer fades + rises in when it replaces the thinking indicator (no typewriter) */
-.answer-fade { animation: ansrise .42s cubic-bezier(.2,.7,.3,1); }
-@keyframes ansrise { from { opacity: 0; transform: translateY(8px); } }
+/* blinking cursor shown at the live edge of the word-by-word typewriter reveal */
+.tw-cursor {
+  display: inline-block;
+  width: 2px;
+  height: .9em;
+  background: var(--accent);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 1s steps(1) infinite;
+}

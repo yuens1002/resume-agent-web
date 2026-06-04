@@ -8,25 +8,32 @@ import { Avatar, SourcePills, FollowupChips } from './ui.tsx'
 import { WorkResult, AboutResult } from './cards.tsx'
 import { MatchResume } from './MatchResume.tsx'
 
-/* Render the agent's answer as on-brand markdown in the .richtext scope: sanitize
-   the backend's cited text (drop [n] + the Sources block), then render real
-   markdown (paragraphs, bold, lists, headings, tables…). No per-token typewriter —
-   the answer fades/rises in (honors reduced motion), then cards/sources/follow-ups
-   reveal just after. */
+/* Word-by-word typewriter reveal. Each word token (word + trailing whitespace)
+   is appended on a 15ms interval so content appears immediately rather than
+   fading in after a hard wait. A blinking cursor tracks the live edge; when
+   the last word lands the cursor disappears and onDone fires (reveals sources
+   + follow-ups). INSTANT mode skips the animation entirely. */
 function AnswerBody({ text, onDone }: { text: string; onDone?: () => void }) {
   const clean = sanitizeAnswer(text)
+  const words = clean.match(/\S+\s*/g) ?? [clean]
+  const total = words.length
+  const interval = Math.min(15, Math.floor(700 / total))
+  const [count, setCount] = useState(INSTANT ? total : 0)
+
   useEffect(() => {
-    if (INSTANT) {
-      onDone?.()
-      return
-    }
-    const t = setTimeout(() => onDone?.(), 350)
+    if (INSTANT) { onDone?.(); return }
+    if (count >= total) { onDone?.(); return }
+    const t = setTimeout(() => setCount((c) => c + 1), interval)
     return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [count, total])
+
+  const displayed = count >= total ? clean : words.slice(0, count).join('')
+
   return (
-    <div className={`richtext${INSTANT ? '' : ' answer-fade'}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{clean}</ReactMarkdown>
+    <div className="richtext">
+      <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayed}</ReactMarkdown>
+      {count < total && <span className="tw-cursor" aria-hidden />}
     </div>
   )
 }
