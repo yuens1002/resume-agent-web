@@ -83,7 +83,7 @@ body::before {
 .hdr-spacer { flex: 1; }
 
 .avail {
-  display: inline-flex; align-items: center; gap: 8px;
+  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .02em;
   padding: 6px 12px 6px 10px; border-radius: 999px;
   background: color-mix(in oklab, var(--good) 12%, var(--paper));
@@ -535,7 +535,7 @@ body.voice-sans .prose.small { font-size: 16px; }
   .fit-cols { grid-template-columns: 1fr; }
   .skillgrid { grid-template-columns: 1fr; }
   .menu { right: 16px; left: 16px; width: auto; }
-  .hdr-role { overflow: hidden; text-overflow: ellipsis; }
+  .hdr-role { white-space: normal; }
 }
 
 /* ============================================================
