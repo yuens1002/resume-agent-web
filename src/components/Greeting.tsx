@@ -8,7 +8,7 @@ export const STARTERS = [
   'Show recent work',
   'What are your strengths?',
   "What's your availability?",
-  'Match a job & tailor my résumé',
+  'Match a job & tailor it',
 ]
 
 export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
