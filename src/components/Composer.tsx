@@ -2,10 +2,12 @@ import { useRef, useState } from 'react'
 import type { ChangeEvent, KeyboardEvent } from 'react'
 import { Icon } from './Icon.tsx'
 import { Chip } from './ui.tsx'
-
-const HINTS = ['TypeScript experience?', 'Accessibility work?', 'How do you test?', 'How do I reach you?']
+import { useProfile } from '../lib/profile-context.ts'
 
 export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; showHints: boolean }) {
+  const profile = useProfile()
+  const first = profile.contact.name.split(' ')[0]
+  const hints = [`TypeScript experience?`, `Accessibility work?`, `How does ${first} approach testing?`, `How do I reach ${first}?`]
   const [v, setV] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -36,7 +38,7 @@ export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; sho
           ref={ref}
           rows={1}
           value={v}
-          placeholder="Ask me anything about my work…"
+          placeholder={`Ask anything about ${first}…`}
           onChange={grow}
           onKeyDown={onKey}
         />
@@ -46,7 +48,7 @@ export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; sho
       </div>
       {showHints && (
         <div className="composer-hint">
-          {HINTS.map((h) => (
+          {hints.map((h) => (
             <Chip key={h} variant="mini" onClick={() => onAsk(h)}>
               {h}
             </Chip>
