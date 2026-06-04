@@ -4,11 +4,11 @@ import { Chip } from './ui.tsx'
 const HEADLINE = "Ask the questions every static résumé hides from"
 
 export const STARTERS = [
-  'Show recent work',
-  'Experience with AI?',
-  'Are you available?',
-  'Match a job & tailor my résumé',
   'Tell me about yourself',
+  'Show recent work',
+  'What are your strengths?',
+  "What's your availability?",
+  'Match a job & tailor it',
 ]
 
 export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {

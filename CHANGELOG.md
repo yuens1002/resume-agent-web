@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- 2026-06-04 — feat(greeting): reorder and retitle starter chips
+  - replace "Experience with AI?" with "What are your strengths?" — maps to the recruiter strengths question, surfaces predominant experience across all past and current work
+  - replace "Are you available?" with "What's your availability?" — more natural phrasing
+  - reorder chips: Tell me about yourself → Show recent work → What are your strengths? → What's your availability? → Match a job & tailor my résumé
+  - add 'strength' keyword to the about render-intent classifier so the strengths chip attaches the skills + employment card
+
 - 2026-06-04 — feat(ui): typewriter answer reveal and sharpened greeting headline
   - replace fade-in with word-by-word typewriter reveal; duration capped at 700ms total so long answers burst in fast, short ones feel natural (~15ms/word)
   - blinking cursor tracks the live edge during reveal; disappears when last word lands, triggering sources + follow-up chips
