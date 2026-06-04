@@ -7,6 +7,7 @@
   - composer hint chips updated: "How does Sunny approach testing?", "How do I reach Sunny?"
   - composer placeholder updated: "Ask anything about Sunny…"
   - framing shifts from first-person (asking the candidate) to third-person (asking about the candidate), matching how the LLM already responds
+  - fix(menu): remove text-decoration underline from Agent card and GitHub links in the ⌘ menu
 
 - 2026-06-04 — feat(ux): progress bar on résumé load + mobile layout fixes
   - animated ease-out progress bar (0→92% over 55s) + percentage counter shown while résumé generates
