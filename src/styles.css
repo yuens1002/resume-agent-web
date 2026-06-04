@@ -414,7 +414,7 @@ body.voice-sans .prose.small { font-size: 16px; }
 .mini-chip {
   display: inline-flex; align-items: center;
   font-family: var(--sans); font-size: 12.5px; line-height: 1; color: var(--ink-soft);
-  padding: 5px 11px; border-radius: 999px; background: transparent;
+  padding: 4px 11px 6px; border-radius: 999px; background: transparent;
   border: 1px solid var(--hair); transition: all .14s;
 }
 .mini-chip:hover { color: var(--accent-ink); border-color: var(--accent-line); background: var(--accent-wash); }
