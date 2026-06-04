@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-06-04 — fix(style): remove body::before decorative gradient overlay — eliminated the blue-tinted radial shade visible in the top portion of the page
+
 - 2026-06-04 — feat(ux): third-person voice for chips and composer
   - starter chips now use the candidate's first name: "Tell me about Sunny", "What are Sunny's strengths?", "What's Sunny's availability?" — derived from live profile, no hardcoding
   - composer hint chips updated: "How does Sunny approach testing?", "How do I reach Sunny?"
