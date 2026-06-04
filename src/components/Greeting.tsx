@@ -1,7 +1,7 @@
 import { useProfile } from '../lib/profile-context.ts'
 import { Chip } from './ui.tsx'
 
-const HEADLINE = "Ask me anything — I'm a résumé you can actually talk to."
+const HEADLINE = "Ask the questions every static résumé hides from"
 
 export const STARTERS = [
   'Show recent work',

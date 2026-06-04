@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+- 2026-06-04 — feat(ui): typewriter answer reveal and sharpened greeting headline
+  - replace fade-in with word-by-word typewriter reveal; duration capped at 700ms total so long answers burst in fast, short ones feel natural (~15ms/word)
+  - blinking cursor tracks the live edge during reveal; disappears when last word lands, triggering sources + follow-up chips
+  - `prefers-reduced-motion` and `?instant=1` both bypass the animation
+  - greeting headline rewritten from first-person persona to idea-voice: "Ask the questions every static résumé hides from"
+
 - 2026-06-04 — feat(docx): render website field in contact header — positioned after email, before github/linkedin; closes #144
 
 - 2026-05-30 — feat(forkable): make the site open-source/forkable — identity-free head, LICENSE, fork README
