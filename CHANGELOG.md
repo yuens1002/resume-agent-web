@@ -5,9 +5,9 @@
 - 2026-06-04 — fix(style): remove body::before decorative gradient overlay — eliminated the blue-tinted radial shade visible in the top portion of the page
 
 - 2026-06-04 — feat(ux): third-person voice for chips and composer
-  - starter chips now use the candidate's first name: "Tell me about Sunny", "What are Sunny's strengths?", "What's Sunny's availability?" — derived from live profile, no hardcoding
-  - composer hint chips updated: "How does Sunny approach testing?", "How do I reach Sunny?"
-  - composer placeholder updated: "Ask anything about Sunny…"
+  - starter chips now use the candidate's first name derived from the live profile — no hardcoding; e.g. "Tell me about [name]", "What are [name]'s strengths?", "What's [name]'s availability?"
+  - composer hint chips follow the same pattern: "How does [name] approach testing?", "How do I reach [name]?"
+  - composer placeholder updated to match: "Ask anything about [name]…"
   - framing shifts from first-person (asking the candidate) to third-person (asking about the candidate), matching how the LLM already responds
   - fix(menu): remove text-decoration underline from Agent card and GitHub links in the ⌘ menu
 
