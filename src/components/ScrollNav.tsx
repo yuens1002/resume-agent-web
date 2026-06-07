@@ -12,7 +12,7 @@ function inViewport(id: string): boolean {
   const el = document.getElementById(id)
   if (!el) return false
   const { top, bottom } = el.getBoundingClientRect()
-  return top < window.innerHeight && bottom >= 0
+  return top <= window.innerHeight && bottom >= 0
 }
 
 export function ScrollNav({ topId, bottomId }: Props) {
