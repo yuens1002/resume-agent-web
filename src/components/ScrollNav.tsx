@@ -1,32 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const THRESHOLD = 100  // px of sustained scrolling in one direction before showing
-const IDLE_MS   = 2500 // ms of no scroll before auto-hiding
+const THRESHOLD = 80    // px net travel in one direction before showing
+const IDLE_MS   = 2500  // ms of no scroll before auto-hiding
 
 interface Props {
   topId: string
   bottomId: string
 }
 
+function inViewport(id: string): boolean {
+  const el = document.getElementById(id)
+  if (!el) return false
+  const { top, bottom } = el.getBoundingClientRect()
+  return top < window.innerHeight && bottom >= 0
+}
+
 export function ScrollNav({ topId, bottomId }: Props) {
   const [show, setShow] = useState<'up' | 'down' | null>(null)
+  const showRef    = useRef<'up' | 'down' | null>(null)
+  const lastY      = useRef(typeof window !== 'undefined' ? window.scrollY : 0)
+  const dirStartY  = useRef(lastY.current)   // scrollY when current direction settled
+  const lastDir    = useRef<'up' | 'down' | null>(null)
+  const idle       = useRef<ReturnType<typeof setTimeout>>()
+  showRef.current  = show
 
-  // Refs for scroll tracking — never stale in the listener
-  const lastY   = useRef(typeof window !== 'undefined' ? window.scrollY : 0)
-  const accum   = useRef(0)
-  const lastDir = useRef<'up' | 'down' | null>(null)
-  const idle    = useRef<ReturnType<typeof setTimeout>>()
-  const showRef = useRef(show)
-  showRef.current = show
-
-  // Hide when the destination sentinel enters the viewport
+  // Hide when the user naturally arrives at the destination sentinel
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
       for (const e of entries) {
-        if (e.isIntersecting) {
-          if (e.target.id === topId  && showRef.current === 'up')   setShow(null)
-          if (e.target.id === bottomId && showRef.current === 'down') setShow(null)
-        }
+        if (!e.isIntersecting) continue
+        if (e.target.id === topId    && showRef.current === 'up')   setShow(null)
+        if (e.target.id === bottomId && showRef.current === 'down') setShow(null)
       }
     }, { threshold: 0 })
     const top    = document.getElementById(topId)
@@ -44,20 +48,26 @@ export function ScrollNav({ topId, bottomId }: Props) {
     const dir: 'up' | 'down' = delta > 0 ? 'down' : 'up'
 
     if (lastDir.current !== dir) {
-      // Direction changed — restart accumulation, hide current button
-      accum.current   = 0
+      // Direction changed — anchor a new start point, hide current button
       lastDir.current = dir
+      dirStartY.current = lastY.current
       setShow(null)
     }
 
-    accum.current += Math.abs(delta)
-    lastY.current  = y
+    lastY.current = y
 
-    if (accum.current >= THRESHOLD) setShow(dir)
+    // Net distance traveled in the current direction
+    const traveled = Math.abs(y - dirStartY.current)
+
+    if (traveled >= THRESHOLD) {
+      // Only show if NOT already at the destination
+      if (dir === 'up'   && !inViewport(topId))    setShow('up')
+      if (dir === 'down' && !inViewport(bottomId)) setShow('down')
+    }
 
     clearTimeout(idle.current)
     idle.current = setTimeout(() => setShow(null), IDLE_MS)
-  }, [])
+  }, [topId, bottomId])
 
   useEffect(() => {
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -68,8 +78,8 @@ export function ScrollNav({ topId, bottomId }: Props) {
   }, [onScroll])
 
   const navigate = () => {
-    const id = show === 'up' ? topId : bottomId
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    document.getElementById(show === 'up' ? topId : bottomId)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     setShow(null)
   }
 
