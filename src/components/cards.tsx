@@ -61,13 +61,17 @@ function ProjectList({ projects, onOpen }: { projects: ProjectVM[]; onOpen: (slu
   )
 }
 
-/* ── Work result = featured + the rest ── */
+/* ── Work result = featured + up to 2 more recent (3 total) ── */
 export function WorkResult({ onOpen }: { onOpen: (slug: string) => void }) {
   const { projects } = useProfile()
   const featured = projects.find((p) => p.featured) ?? projects[0]
-  const rest = projects.filter((p) => p.slug !== featured.slug)
+  const rest = projects.filter((p) => p.slug !== featured.slug).slice(0, 2)
+  const total = 1 + rest.length
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-soft)' }}>
+        {total} most recent project{total !== 1 ? 's' : ''}
+      </div>
       <FeaturedCase project={featured} onOpen={onOpen} />
       {rest.length > 0 && <ProjectList projects={rest} onOpen={onOpen} />}
     </div>

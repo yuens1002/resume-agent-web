@@ -9,7 +9,7 @@ export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
   const starters = [
     `Tell me about ${first}`,
     'Show recent work',
-    `What are ${first}'s strengths?`,
+    `What sets ${first} apart?`,
     `What's ${first}'s availability?`,
     'Match a job & tailor it',
   ]

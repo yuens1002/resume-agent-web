@@ -15,7 +15,7 @@ const RENDER_INTENTS: { keys: string[]; render: Exclude<RenderKind, null> }[] = 
   },
   {
     render: 'about',
-    keys: ['about', 'yourself', 'who are', 'background', 'tell me about you', 'experience', 'years', 'summary', 'strength'],
+    keys: ['about', 'yourself', 'who are', 'background', 'tell me about you', 'experience', 'years', 'summary', 'strength', 'sets', 'apart', 'growth areas', 'weaknesses'],
   },
 ]
 

@@ -7,7 +7,7 @@ import { useProfile } from '../lib/profile-context.ts'
 export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; showHints: boolean }) {
   const profile = useProfile()
   const first = profile.contact.name.split(' ')[0]
-  const hints = [`TypeScript experience?`, `Accessibility work?`, `How does ${first} approach testing?`, `How do I reach ${first}?`]
+  const hints = [`What are ${first}'s growth areas?`, `How does ${first} approach testing?`, `TypeScript experience?`, `How do I reach ${first}?`]
   const [v, setV] = useState('')
   const ref = useRef<HTMLTextAreaElement>(null)
 
