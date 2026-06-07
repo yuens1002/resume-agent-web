@@ -11,6 +11,7 @@ import { Composer } from './components/Composer.tsx'
 import { Turn as TurnView } from './components/Thread.tsx'
 import { ProjectDetail } from './components/cards.tsx'
 import { AgentMenu } from './components/AgentMenu.tsx'
+import { ScrollNav } from './components/ScrollNav.tsx'
 
 // Phrases that mean "open the match/tailor tool" rather than "answer a question".
 // These bypass /query and render the JD-paste UI directly (no confused LLM reply).
@@ -168,12 +169,15 @@ export function App() {
         </header>
 
         <main className="thread">
+          <div id="scroll-top" style={{ height: 0 }} />
           <Greeting onAsk={ask} />
           {turns.map((turn) => (
             <TurnView key={turn.key} turn={turn} onAsk={ask} onOpen={setDetail} />
           ))}
+          <div id="scroll-bottom" style={{ height: 0 }} />
         </main>
 
+        <ScrollNav hasTurns={turns.length > 0} topSentinelId="scroll-top" bottomSentinelId="scroll-bottom" />
         <Composer onAsk={ask} showHints={turns.length === 0} />
 
         <footer className="foot">
