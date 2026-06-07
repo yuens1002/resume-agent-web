@@ -11,11 +11,11 @@ import type { RenderKind } from './types.ts'
 const RENDER_INTENTS: { keys: string[]; render: Exclude<RenderKind, null> }[] = [
   {
     render: 'work',
-    keys: ['recent work', 'work', 'project', 'projects', 'portfolio', 'built', 'build', 'shipped', 'show me'],
+    keys: ['recent work', 'project', 'projects', 'portfolio', 'built', 'build', 'shipped', 'show me'],
   },
   {
     render: 'about',
-    keys: ['about', 'yourself', 'who are', 'background', 'tell me about you', 'experience', 'years', 'summary', 'strength', 'sets', 'apart', 'growth areas', 'weaknesses'],
+    keys: ['about', 'yourself', 'who are', 'background', 'tell me about you ', 'experience', 'years', 'summary', 'strength', 'sets', 'apart', 'growth areas', 'weaknesses'],
   },
 ]
 

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-06-07 — fix(intent): remove bare 'work' keyword from work render classifier — was matching "what kind of work is Sunny looking for?" (availability question) as a project card trigger; tighten 'tell me about you' to require trailing space so it doesn't match "tell me about your projects"
+
 - 2026-06-07 — fix(followup): filter follow-up suggestions already asked in the current conversation — prevents repeated chips across turns
 
 - 2026-06-07 — fix(scroll-nav): direction-intent detection — show ↑/↓ only after 80px sustained scroll in one direction; hide at top/bottom; hide on idle; net-distance threshold robust against trackpad jitter
