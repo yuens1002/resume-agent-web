@@ -33,7 +33,7 @@ export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; sho
   }
 
   return (
-    <div className="composer-wrap" style={{ position: 'relative' }}>
+    <div className="composer-wrap">
       <ScrollNav topId="scroll-top" bottomId="scroll-bottom" />
       <div className="composer">
         <textarea
