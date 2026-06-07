@@ -93,7 +93,12 @@ export function App() {
                   answer: r.answer,
                   confidence: r.confidence,
                   sources: r.sources ?? [],
-                  followups: r.follow_up_suggestions ?? [],
+                  followups: (() => {
+                    const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
+                    return (r.follow_up_suggestions ?? []).filter(
+                      f => typeof f === 'string' && !asked.has(f.toLowerCase().trim())
+                    )
+                  })(),
                   pending: false,
                 }
               : t,
