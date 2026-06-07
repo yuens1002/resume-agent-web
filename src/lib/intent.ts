@@ -20,7 +20,8 @@ const RENDER_INTENTS: { keys: string[]; render: Exclude<RenderKind, null> }[] = 
 ]
 
 export function resolveRender(q: string): RenderKind {
-  const s = ` ${q.toLowerCase()} `
+  // Normalize punctuation to spaces so "tell me about you?" matches "tell me about you "
+  const s = ` ${q.toLowerCase().replace(/[^\w\s]/g, ' ')} `
   let best: RenderKind = null
   let bestScore = 0
   for (const intent of RENDER_INTENTS) {
