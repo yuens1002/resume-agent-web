@@ -3,6 +3,7 @@ import type { ChangeEvent, KeyboardEvent } from 'react'
 import { Icon } from './Icon.tsx'
 import { Chip } from './ui.tsx'
 import { useProfile } from '../lib/profile-context.ts'
+import { ScrollNav } from './ScrollNav.tsx'
 
 export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; showHints: boolean }) {
   const profile = useProfile()
@@ -32,7 +33,8 @@ export function Composer({ onAsk, showHints }: { onAsk: (q: string) => void; sho
   }
 
   return (
-    <div className="composer-wrap">
+    <div className="composer-wrap" style={{ position: 'relative' }}>
+      <ScrollNav topId="scroll-top" bottomId="scroll-bottom" />
       <div className="composer">
         <textarea
           ref={ref}
