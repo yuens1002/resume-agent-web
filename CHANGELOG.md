@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-06-07 — fix(followup): filter follow-up suggestions already asked in the current conversation — prevents repeated chips across turns
+
 - 2026-06-07 — fix(scroll-nav): direction-intent detection — show ↑/↓ only after 80px sustained scroll in one direction; hide at top/bottom; hide on idle; net-distance threshold robust against trackpad jitter
 
 - 2026-06-04 — fix(style): remove body::before decorative gradient overlay — eliminated the blue-tinted radial shade visible in the top portion of the page
