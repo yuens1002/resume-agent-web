@@ -91,7 +91,7 @@ export function Turn({
               <AnswerBody key={turn.key} text={turn.answer} onDone={() => setRevealed(true)} />
               {revealed && (
                 <div className="turn-anim" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {turn.render === 'work' && <WorkResult onOpen={onOpen} />}
+                  {turn.render === 'work' && <WorkResult sources={turn.sources} onOpen={onOpen} />}
                   {turn.render === 'fit' && <MatchResume />}
                   {turn.render === 'about' && <AboutResult />}
                   <SourcePills sources={turn.sources} />

@@ -12,6 +12,9 @@ export function sanitizeAnswer(raw: string): string {
     .replace(/\n+\s*Sources?:[\s\S]*$/i, '')
     // remove inline citation markers like [1] or [12]
     .replace(/[ \t]*\[\d+\]/g, '')
+    // strip trailing invitation-to-follow-up sentences the LLM sometimes appends
+    // e.g. "Want to hear about Sunny's other 3 projects?" — these duplicate follow-up chips
+    .replace(/\.?\s+(?:Want\s+to|Would\s+you\s+like\s+to|Interested\s+in|Curious\s+about)\s+[^?]+\?+\s*$/i, '')
     // tidy whitespace: collapse 3+ blank lines, trim trailing spaces per line
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
