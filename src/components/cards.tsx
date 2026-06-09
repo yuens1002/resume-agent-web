@@ -69,6 +69,8 @@ export function WorkResult({ sources = [], onOpen }: { sources?: string[]; onOpe
   const { projects } = useProfile()
 
   // "projects.brew-guide" → "brew-guide"
+  // hasProjectSources: the response declared project sources (even if slugs don't match locally)
+  const hasProjectSources = sources.some((s) => s.startsWith('projects.'))
   const sourceSlugs = sources
     .filter((s) => s.startsWith('projects.'))
     .map((s) => s.slice('projects.'.length))
@@ -77,27 +79,34 @@ export function WorkResult({ sources = [], onOpen }: { sources?: string[]; onOpe
     .map((slug) => projects.find((p) => p.slug === slug))
     .filter(Boolean) as ProjectVM[]
 
-  const hasSources = sourceProjects.length > 0
-
-  // Fallback: featured + up to 2 (original behavior)
+  // Fallback: featured + up to 2 (original behavior when no project sources declared)
   const fallbackProjects = (): ProjectVM[] => {
+    if (projects.length === 0) return []
     const featured = projects.find((p) => p.featured) ?? projects[0]
     return [featured, ...projects.filter((p) => p.slug !== featured.slug).slice(0, 2)]
   }
 
-  const displayProjects = hasSources ? sourceProjects : fallbackProjects()
+  // If sources declared projects but none matched local slugs, show nothing rather than
+  // falling back to featured+2 (which would show cards inconsistent with source pills).
+  const displayProjects = sourceProjects.length > 0
+    ? sourceProjects
+    : hasProjectSources ? [] : fallbackProjects()
+
   if (displayProjects.length === 0) return null
 
   const total = displayProjects.length
+  const label = hasProjectSources
+    ? `${total} project${total !== 1 ? 's' : ''}`
+    : `${total} most recent project${total !== 1 ? 's' : ''}`
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-soft)' }}>
-        {total} project{total !== 1 ? 's' : ''}
+        {label}
       </div>
-      {hasSources && sourceProjects.length === 1 ? (
+      {hasProjectSources && sourceProjects.length === 1 ? (
         <FeaturedCase project={displayProjects[0]} onOpen={onOpen} />
-      ) : hasSources ? (
+      ) : hasProjectSources ? (
         <ProjectList projects={displayProjects} onOpen={onOpen} />
       ) : (
         <>
