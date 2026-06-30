@@ -58,6 +58,7 @@ export interface PublicProfile {
   id: string
   contact: BackendContact
   summary: string
+  tagline?: string | null
   skills: BackendSkill[]
   employment: BackendEmployment[]
   education: BackendEducation[]
@@ -71,6 +72,7 @@ export interface QueryResponse {
   answer: string
   confidence: 'high' | 'medium' | 'low'
   sources: string[]
+  project_slugs?: string[]
   follow_up_suggestions: string[]
 }
 
@@ -170,6 +172,7 @@ export interface Turn {
   answer: string
   confidence: 'high' | 'medium' | 'low'
   sources: string[]
+  projectSlugs: string[]
   followups: string[]
   render: RenderKind
   pending: boolean
