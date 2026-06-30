@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 2026-06-29 — feat(profile): prefer tagline over preferred_roles in header display with fallback chain
 - 2026-06-08 — fix(cards): source-driven project display — WorkResult now renders projects named in the /query sources array (in source order) instead of a hardcoded featured+2 selection; strip trailing LLM invitation-to-follow-up sentences from answer prose to eliminate duplicate chips
 
 - 2026-06-07 — fix(intent): remove bare 'work' keyword from work render classifier — was matching "what kind of work is Sunny looking for?" (availability question) as a project card trigger; tighten 'tell me about you' to require trailing space so it doesn't match "tell me about your projects"
