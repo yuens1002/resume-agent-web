@@ -76,9 +76,13 @@ export function WorkResult({ projectSlugs = [], sources = [], onOpen }: { projec
     .map((slug) => projects.find((p) => p.slug === slug))
     .filter(Boolean) as ProjectVM[]
 
-  // Fallback: featured + up to 2 (when neither field resolves any project)
+  // Fallback: featured + up to 2 (only when backend declared no project slugs at all).
+  // If slugs were declared but none resolved locally (slug rename, stale cache),
+  // show nothing — same guard as the prior hasProjectSources behavior — to avoid
+  // displaying unrelated cards while source pills name specific projects.
+  const slugsDeclared = slugs.length > 0
   const fallbackProjects: ProjectVM[] = (() => {
-    if (projects.length === 0) return []
+    if (slugsDeclared || projects.length === 0) return []
     const featured = projects.find((p) => p.featured) ?? projects[0]
     return [featured, ...projects.filter((p) => p.slug !== featured.slug).slice(0, 2)]
   })()
