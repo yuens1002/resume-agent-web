@@ -9,9 +9,8 @@ export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
   const starters = [
     `Tell me about ${first}`,
     'Show recent work',
-    `What sets ${first} apart?`,
     `What's ${first}'s availability?`,
-    'Match a job & tailor it',
+    `${first}'s Resume`,
   ]
   return (
     <div className="greet turn-anim">
