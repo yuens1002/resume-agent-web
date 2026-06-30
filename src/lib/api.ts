@@ -42,8 +42,10 @@ export async function getProfile(): Promise<PublicProfile> {
  * mode (short prose, no inline [n] markers / Sources block) once it ships — it's
  * ignored until then (CORS-verified to allow the header), so no redeploy needed.
  */
-export function ask(question: string): Promise<QueryResponse> {
-  return postJSON<QueryResponse>('/query', { question }, { 'x-agent-type': 'human' })
+export function ask(question: string, context?: string): Promise<QueryResponse> {
+  const body: Record<string, string> = { question }
+  if (context) body.context = context
+  return postJSON<QueryResponse>('/query', body, { 'x-agent-type': 'human' })
 }
 
 /** POST /match — deterministic weighted (50/30/20) job-fit score. */

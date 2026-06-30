@@ -14,8 +14,10 @@ import { AgentMenu } from './components/AgentMenu.tsx'
 
 // Phrases that mean "open the match/tailor tool" rather than "answer a question".
 // These bypass /query and render the JD-paste UI directly (no confused LLM reply).
+// The anchored ^\w+'s\s+Resume$ alternative catches the "[First]'s Resume" starter
+// chip exactly — without accidentally matching mid-sentence resume mentions.
 const FIT_RE =
-  /\b(match\s+(a\s+)?job|tailor\s+(my|a)\s+(r[eé]sum[eé]?|cv)|score\s+(the\s+)?fit|score\s+a\s+job|paste\s+(a|the|my)\s+(job|jd)|job\s+description|check\s+(my\s+)?fit|am\s+i\s+a\s+(good\s+)?fit)\b/i
+  /\b(match\s+(a\s+)?job|tailor\s+(my|a)\s+(r[eé]sum[eé]?|cv)|score\s+(the\s+)?fit|score\s+a\s+job|paste\s+(a|the|my)\s+(job|jd)|job\s+description|check\s+(my\s+)?fit|am\s+i\s+a\s+(good\s+)?fit)\b|^\w+'s\s+Resume$/i
 const FIT_INTRO =
   "Paste a job description below — or pick a sample — and I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain). If it's a strong match, I can tailor a résumé to that exact role."
 
@@ -66,7 +68,7 @@ export function App() {
     }
   }, [menu, detail])
 
-  const ask = useCallback((q: string) => {
+  const ask = useCallback((q: string, context?: string) => {
     const key = `${Date.now()}-${seq.current++}`
     setMenu(false)
 
@@ -74,16 +76,16 @@ export function App() {
     if (FIT_RE.test(q)) {
       setTurns((prev) => [
         ...prev,
-        { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], followups: [], render: 'fit', pending: false },
+        { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], projectSlugs: [], followups: [], render: 'fit', pending: false },
       ])
       return
     }
 
     setTurns((prev) => [
       ...prev,
-      { key, q, answer: '', confidence: 'high', sources: [], followups: [], render: resolveRender(q), pending: true },
+      { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], followups: [], render: resolveRender(q), pending: true },
     ])
-    askApi(q)
+    askApi(q, context)
       .then((r) =>
         setTurns((prev) =>
           prev.map((t) =>
@@ -93,6 +95,7 @@ export function App() {
                   answer: r.answer,
                   confidence: r.confidence,
                   sources: r.sources ?? [],
+                  projectSlugs: r.project_slugs ?? [],
                   followups: (() => {
                     const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
                     return (r.follow_up_suggestions ?? []).filter(

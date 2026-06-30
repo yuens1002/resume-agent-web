@@ -61,7 +61,7 @@ export function Turn({
   onOpen,
 }: {
   turn: TurnType
-  onAsk: (q: string) => void
+  onAsk: (q: string, context?: string) => void
   onOpen: (slug: string) => void
 }) {
   const [revealed, setRevealed] = useState(false)
@@ -91,11 +91,11 @@ export function Turn({
               <AnswerBody key={turn.key} text={turn.answer} onDone={() => setRevealed(true)} />
               {revealed && (
                 <div className="turn-anim" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {turn.render === 'work' && <WorkResult sources={turn.sources} onOpen={onOpen} />}
+                  {turn.render === 'work' && <WorkResult projectSlugs={turn.projectSlugs} sources={turn.sources} onOpen={onOpen} />}
                   {turn.render === 'fit' && <MatchResume />}
                   {turn.render === 'about' && <AboutResult />}
                   <SourcePills sources={turn.sources} />
-                  <FollowupChips items={turn.followups} onAsk={onAsk} />
+                  <FollowupChips items={turn.followups} shownProjects={turn.projectSlugs} onAsk={onAsk} />
                 </div>
               )}
             </>
