@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 2026-06-29 — feat(ui): wire project_slugs and shown_projects context; fix resume chip trigger
 - 2026-06-29 — chore(ui): remove "what sets apart" starter chip and rename "match a job" to first-name resume
 - 2026-06-29 — feat(profile): prefer tagline over preferred_roles in header display with fallback chain
 - 2026-06-08 — fix(cards): source-driven project display — WorkResult now renders projects named in the /query sources array (in source order) instead of a hardcoded featured+2 selection; strip trailing LLM invitation-to-follow-up sentences from answer prose to eliminate duplicate chips

@@ -171,13 +171,22 @@ export function SourcePills({ sources }: { sources: string[] }) {
   )
 }
 
-export function FollowupChips({ items, onAsk }: { items: string[]; onAsk: (q: string) => void }) {
+export function FollowupChips({
+  items,
+  shownProjects = [],
+  onAsk,
+}: {
+  items: string[]
+  shownProjects?: string[]
+  onAsk: (q: string, context?: string) => void
+}) {
   if (!items.length) return null
+  const context = shownProjects.length ? `shown_projects: ${shownProjects.join(', ')}` : undefined
   return (
     <div className="followups">
       <span className="lbl">follow-ups</span>
       {items.map((f) => (
-        <Chip key={f} onClick={() => onAsk(f)}>
+        <Chip key={f} onClick={() => onAsk(f, context)}>
           {f}
         </Chip>
       ))}

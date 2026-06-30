@@ -62,40 +62,34 @@ function ProjectList({ projects, onOpen }: { projects: ProjectVM[]; onOpen: (slu
 }
 
 /* ── Work result ──
-   If the response named specific projects (via sources), show exactly those in
-   source order — 1 project → FeaturedCase; 2+ → flat ProjectList.
-   Falls back to featured + 2 most recent when no project sources are present. */
-export function WorkResult({ sources = [], onOpen }: { sources?: string[]; onOpen: (slug: string) => void }) {
+   Uses project_slugs (backend single source of truth) when available.
+   Falls back to source-pill slugs, then to featured + 2 most recent. */
+export function WorkResult({ projectSlugs = [], sources = [], onOpen }: { projectSlugs?: string[]; sources?: string[]; onOpen: (slug: string) => void }) {
   const { projects } = useProfile()
 
-  // "projects.brew-guide" → "brew-guide"
-  // hasProjectSources: the response declared project sources (even if slugs don't match locally)
-  const hasProjectSources = sources.some((s) => s.startsWith('projects.'))
-  const sourceSlugs = sources
-    .filter((s) => s.startsWith('projects.'))
-    .map((s) => s.slice('projects.'.length))
+  // project_slugs → direct; sources → extract "projects.*" slugs as fallback
+  const slugs = projectSlugs.length
+    ? projectSlugs
+    : sources.filter((s) => s.startsWith('projects.')).map((s) => s.slice('projects.'.length))
 
-  const sourceProjects = sourceSlugs
+  const resolvedProjects = slugs
     .map((slug) => projects.find((p) => p.slug === slug))
     .filter(Boolean) as ProjectVM[]
 
-  // Fallback: featured + up to 2 (original behavior when no project sources declared)
-  const fallbackProjects = (): ProjectVM[] => {
+  // Fallback: featured + up to 2 (when neither field resolves any project)
+  const fallbackProjects: ProjectVM[] = (() => {
     if (projects.length === 0) return []
     const featured = projects.find((p) => p.featured) ?? projects[0]
     return [featured, ...projects.filter((p) => p.slug !== featured.slug).slice(0, 2)]
-  }
+  })()
 
-  // If sources declared projects but none matched local slugs, show nothing rather than
-  // falling back to featured+2 (which would show cards inconsistent with source pills).
-  const displayProjects = sourceProjects.length > 0
-    ? sourceProjects
-    : hasProjectSources ? [] : fallbackProjects()
+  const displayProjects = resolvedProjects.length > 0 ? resolvedProjects : fallbackProjects
+  const isSourceDriven = resolvedProjects.length > 0
 
   if (displayProjects.length === 0) return null
 
   const total = displayProjects.length
-  const label = hasProjectSources
+  const label = isSourceDriven
     ? `${total} project${total !== 1 ? 's' : ''}`
     : `${total} most recent project${total !== 1 ? 's' : ''}`
 
@@ -104,9 +98,9 @@ export function WorkResult({ sources = [], onOpen }: { sources?: string[]; onOpe
       <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.06em', textTransform: 'uppercase', color: 'var(--ink-soft)' }}>
         {label}
       </div>
-      {hasProjectSources && sourceProjects.length === 1 ? (
+      {isSourceDriven && total === 1 ? (
         <FeaturedCase project={displayProjects[0]} onOpen={onOpen} />
-      ) : hasProjectSources ? (
+      ) : isSourceDriven ? (
         <ProjectList projects={displayProjects} onOpen={onOpen} />
       ) : (
         <>
