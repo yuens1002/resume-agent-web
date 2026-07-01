@@ -51,7 +51,7 @@ function projectVM(p: PublicProfile['projects'][number], featured: boolean): Pro
     highlights: p.highlights ?? [],
     architecture: p.architecture,
     impact: p.impact,
-    links: { demo: p.url || undefined, repo: p.repo || undefined },
+    links: { demo: p.url || undefined, demoLabel: p.urlLabel || undefined, repo: p.repo || undefined },
     featured,
     cover: p.cover || undefined,
   }
