@@ -43,6 +43,7 @@ export interface BackendProject {
   status: 'active' | 'in-progress' | 'archived'
   started?: string
   url?: string
+  urlLabel?: string
   repo?: string
   cover?: string
 }
@@ -148,7 +149,7 @@ export interface ProjectVM {
   highlights: string[]
   architecture?: string
   impact?: string
-  links: { demo?: string; repo?: string }
+  links: { demo?: string; demoLabel?: string; repo?: string }
   featured: boolean
   cover?: string
 }

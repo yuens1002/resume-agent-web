@@ -22,7 +22,7 @@ function FeaturedCase({ project, onOpen }: { project: ProjectVM; onOpen: (slug: 
           </Btn>
           {project.links.demo && (
             <Btn variant="ghost" icon="link" href={project.links.demo}>
-              Live demo
+              {project.links.demoLabel ?? 'Live demo'}
             </Btn>
           )}
         </div>
@@ -173,7 +173,7 @@ export function ProjectDetail({ slug, onClose }: { slug: string; onClose: () => 
         <div className="btnrow">
           {p.links.demo && (
             <Btn icon="link" href={p.links.demo}>
-              Live demo
+              {p.links.demoLabel ?? 'Live demo'}
             </Btn>
           )}
           {p.links.repo && (
