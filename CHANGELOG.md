@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 2026-07-01 — feat(cards): render per-project demo button label (demoLabel) with fallback to "Live demo"
 - 2026-06-29 — feat(ui): wire project_slugs and shown_projects context; fix resume chip trigger
 - 2026-06-29 — chore(ui): remove "what sets apart" starter chip and rename "match a job" to first-name resume
 - 2026-06-29 — feat(profile): prefer tagline over preferred_roles in header display with fallback chain
