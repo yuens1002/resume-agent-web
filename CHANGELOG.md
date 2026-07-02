@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- 2026-07-01 — fix(intent): derive render kind from `project_slugs` instead of a pre-response keyword guess — a question the frontend pre-classified as "about" (or no card) that the backend actually answers with specific projects now correctly renders the project card; stopgap ahead of real tool-calling on the backend (resume-agent#174)
 - 2026-07-01 — feat(cards): render per-project demo button label (backend `urlLabel` → `links.demoLabel`) with fallback to "Live demo"
 - 2026-06-29 — feat(ui): wire project_slugs and shown_projects context; fix resume chip trigger
 - 2026-06-29 — chore(ui): remove "what sets apart" starter chip and rename "match a job" to first-name resume

@@ -34,3 +34,19 @@ export function resolveRender(q: string): RenderKind {
   }
   return best
 }
+
+/**
+ * Reconcile the pre-response keyword guess with the backend's response once it
+ * lands. `project_slugs` is the backend's documented single source of truth for
+ * which projects an answer discusses (see resume-agent's RULE_OUTPUT_JSON) — so
+ * a non-empty list always wins and forces the project card, overriding a wrong
+ * pre-response guess (e.g. "about" for "tell me about project X").
+ *
+ * There is no equivalent backend signal for "about"-ness, so when no projects
+ * were discussed this intentionally falls back to the pre-response guess rather
+ * than defaulting to 'about' — otherwise every decline / capability-gap / off-topic
+ * answer (which also has empty project_slugs) would wrongly grow an About card.
+ */
+export function deriveRender(preResponseRender: RenderKind, projectSlugs: string[] | undefined): RenderKind {
+  return (projectSlugs?.length ?? 0) > 0 ? 'work' : preResponseRender
+}
