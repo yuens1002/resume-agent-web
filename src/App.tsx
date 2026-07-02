@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getProfile, ask as askApi } from './lib/api.ts'
 import { adaptProfile } from './lib/adaptProfile.ts'
-import { resolveRender } from './lib/intent.ts'
+import { resolveRender, deriveRender } from './lib/intent.ts'
 import { ProfileContext } from './lib/profile-context.ts'
 import type { ProfileVM, Turn } from './lib/types.ts'
 import { Icon } from './components/Icon.tsx'
@@ -96,6 +96,7 @@ export function App() {
                   confidence: r.confidence,
                   sources: r.sources ?? [],
                   projectSlugs: r.project_slugs ?? [],
+                  render: deriveRender(t.render, r.project_slugs),
                   followups: (() => {
                     const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
                     return (r.follow_up_suggestions ?? []).filter(
