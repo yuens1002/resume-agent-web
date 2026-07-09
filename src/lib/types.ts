@@ -75,6 +75,10 @@ export interface QueryResponse {
   sources: string[]
   project_slugs?: string[]
   follow_up_suggestions: string[]
+  // Set when the model invoked the open_match_tool tool alongside the JSON
+  // envelope (resume-agent#174) — a first-class routing signal, not derived
+  // from answer text. null/absent means no tool was called.
+  action_intent?: { tool: string } | null
 }
 
 // ── Backend: POST /match ──

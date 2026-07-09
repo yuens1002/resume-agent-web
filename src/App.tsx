@@ -12,12 +12,15 @@ import { Turn as TurnView } from './components/Thread.tsx'
 import { ProjectDetail } from './components/cards.tsx'
 import { AgentMenu } from './components/AgentMenu.tsx'
 
-// Phrases that mean "open the match/tailor tool" rather than "answer a question".
-// These bypass /query and render the JD-paste UI directly (no confused LLM reply).
-// The anchored ^\w+'s\s+Resume$ alternative catches the "[First]'s Resume" starter
-// chip exactly — without accidentally matching mid-sentence resume mentions.
-const FIT_RE =
-  /\b(match\s+(a\s+)?job|tailor\s+(my|a)\s+(r[eé]sum[eé]?|cv)|score\s+(the\s+)?fit|score\s+a\s+job|paste\s+(a|the|my)\s+(job|jd)|job\s+description|check\s+(my\s+)?fit|am\s+i\s+a\s+(good\s+)?fit)\b|^\w+'s\s+Resume$/i
+// The "[First]'s Resume" starter chip is a closed, deterministic input (the
+// frontend controls its exact text) — it bypasses /query and opens the
+// JD-paste UI directly, no round-trip needed. Everything else (arbitrary
+// phrasing like "show me Sunny's resume" or "am I a good fit for this role")
+// routes through /query as normal; the model's own judgment decides whether to
+// open the tool, signaled back via action_intent (resume-agent#174) — see
+// deriveRender in lib/intent.ts. This replaces the old FIT_RE free-text regex,
+// which only matched a fixed list of trigger phrases.
+const FIT_CHIP_RE = /^\w+'s\s+Resume$/i
 const FIT_INTRO =
   "Paste a job description below — or pick a sample — and I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain). If it's a strong match, I can tailor a résumé to that exact role."
 
@@ -72,8 +75,8 @@ export function App() {
     const key = `${Date.now()}-${seq.current++}`
     setMenu(false)
 
-    // Tool-trigger phrases open the match/tailor UI directly — no /query round-trip.
-    if (FIT_RE.test(q)) {
+    // The starter-chip anchor opens the match/tailor UI directly — no /query round-trip.
+    if (FIT_CHIP_RE.test(q)) {
       setTurns((prev) => [
         ...prev,
         { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], projectSlugs: [], followups: [], render: 'fit', pending: false },
@@ -86,29 +89,35 @@ export function App() {
       { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], followups: [], render: resolveRender(q), pending: true },
     ])
     askApi(q, context)
-      .then((r) =>
+      .then((r) => {
+        // action_intent === open_match_tool: open the fit UI with the same intro
+        // shown by the starter-chip shortcut, rather than the model's throwaway
+        // "opening the tool" filler answer — keeps both entry points consistent.
+        const isFitIntent = r.action_intent?.tool === 'open_match_tool'
         setTurns((prev) =>
           prev.map((t) =>
             t.key === key
               ? {
                   ...t,
-                  answer: r.answer,
-                  confidence: r.confidence,
-                  sources: r.sources ?? [],
-                  projectSlugs: r.project_slugs ?? [],
-                  render: deriveRender(t.render, r.project_slugs),
-                  followups: (() => {
-                    const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
-                    return (r.follow_up_suggestions ?? []).filter(
-                      f => typeof f === 'string' && !asked.has(f.toLowerCase().trim())
-                    )
-                  })(),
+                  answer: isFitIntent ? FIT_INTRO : r.answer,
+                  confidence: isFitIntent ? 'high' : r.confidence,
+                  sources: isFitIntent ? [] : r.sources ?? [],
+                  projectSlugs: isFitIntent ? [] : r.project_slugs ?? [],
+                  render: deriveRender(t.render, r.project_slugs, r.action_intent),
+                  followups: isFitIntent
+                    ? []
+                    : (() => {
+                        const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
+                        return (r.follow_up_suggestions ?? []).filter(
+                          f => typeof f === 'string' && !asked.has(f.toLowerCase().trim())
+                        )
+                      })(),
                   pending: false,
                 }
               : t,
           ),
-        ),
-      )
+        )
+      })
       .catch(() =>
         setTurns((prev) =>
           prev.map((t) =>
