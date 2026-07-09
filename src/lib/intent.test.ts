@@ -47,4 +47,18 @@ describe('deriveRender (post-response reconciliation)', () => {
     expect(deriveRender('about', undefined)).toBe('about')
     expect(deriveRender(null, undefined)).toBe(null)
   })
+
+  it('opens the fit card when action_intent signals open_match_tool, overriding any keyword guess', () => {
+    expect(deriveRender('about', [], { tool: 'open_match_tool' })).toBe('fit')
+    expect(deriveRender(null, [], { tool: 'open_match_tool' })).toBe('fit')
+  })
+
+  it('opens the fit card even when project_slugs is also non-empty', () => {
+    expect(deriveRender('work', ['artisan-roast'], { tool: 'open_match_tool' })).toBe('fit')
+  })
+
+  it('ignores a null or absent action_intent and falls back to project_slugs/pre-response logic', () => {
+    expect(deriveRender('work', ['artisan-roast'], null)).toBe('work')
+    expect(deriveRender('about', [])).toBe('about')
+  })
 })
