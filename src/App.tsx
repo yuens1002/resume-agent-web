@@ -89,29 +89,35 @@ export function App() {
       { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], followups: [], render: resolveRender(q), pending: true },
     ])
     askApi(q, context)
-      .then((r) =>
+      .then((r) => {
+        // action_intent === open_match_tool: open the fit UI with the same intro
+        // shown by the starter-chip shortcut, rather than the model's throwaway
+        // "opening the tool" filler answer — keeps both entry points consistent.
+        const isFitIntent = r.action_intent?.tool === 'open_match_tool'
         setTurns((prev) =>
           prev.map((t) =>
             t.key === key
               ? {
                   ...t,
-                  answer: r.answer,
-                  confidence: r.confidence,
-                  sources: r.sources ?? [],
-                  projectSlugs: r.project_slugs ?? [],
+                  answer: isFitIntent ? FIT_INTRO : r.answer,
+                  confidence: isFitIntent ? 'high' : r.confidence,
+                  sources: isFitIntent ? [] : r.sources ?? [],
+                  projectSlugs: isFitIntent ? [] : r.project_slugs ?? [],
                   render: deriveRender(t.render, r.project_slugs, r.action_intent),
-                  followups: (() => {
-                    const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
-                    return (r.follow_up_suggestions ?? []).filter(
-                      f => typeof f === 'string' && !asked.has(f.toLowerCase().trim())
-                    )
-                  })(),
+                  followups: isFitIntent
+                    ? []
+                    : (() => {
+                        const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
+                        return (r.follow_up_suggestions ?? []).filter(
+                          f => typeof f === 'string' && !asked.has(f.toLowerCase().trim())
+                        )
+                      })(),
                   pending: false,
                 }
               : t,
           ),
-        ),
-      )
+        )
+      })
       .catch(() =>
         setTurns((prev) =>
           prev.map((t) =>
