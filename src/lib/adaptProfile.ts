@@ -45,6 +45,7 @@ function projectVM(p: PublicProfile['projects'][number], featured: boolean): Pro
     tagline: p.description,
     status: p.status,
     period,
+    started: p.started,
     tech: p.tech ?? [],
     problem: p.problem,
     role: p.role,

@@ -3,12 +3,17 @@ import { Chip } from './ui.tsx'
 
 const HEADLINE = "Ask the questions every static résumé hides from"
 
+// Exported so App.tsx can match this exact starter-chip text deterministically
+// (same pattern as the "${first}'s Resume" chip) rather than routing it
+// through /query's free-form action_intent classification — see App.tsx.
+export const WORK_CHIP_TEXT = 'Show recent work'
+
 export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
   const profile = useProfile()
   const first = profile.contact.name.split(' ')[0]
   const starters = [
     `Tell me about ${first}`,
-    'Show recent work',
+    WORK_CHIP_TEXT,
     `What's ${first}'s availability?`,
     `${first}'s Resume`,
   ]

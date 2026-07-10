@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getProfile, ask as askApi } from './lib/api.ts'
 import { adaptProfile } from './lib/adaptProfile.ts'
-import { resolveRender, deriveRender } from './lib/intent.ts'
+import {
+  resolveRender,
+  deriveRender,
+  mostRecentProjectSlugs,
+  remainingProjectsFollowup,
+  isRemainingProjectsFollowup,
+} from './lib/intent.ts'
 import { ProfileContext } from './lib/profile-context.ts'
 import type { ProfileVM, Turn } from './lib/types.ts'
 import { Icon } from './components/Icon.tsx'
 import { Pill } from './components/ui.tsx'
-import { Greeting } from './components/Greeting.tsx'
+import { Greeting, WORK_CHIP_TEXT } from './components/Greeting.tsx'
 import { Composer } from './components/Composer.tsx'
 import { Turn as TurnView } from './components/Thread.tsx'
 import { ProjectDetail } from './components/cards.tsx'
@@ -23,6 +29,20 @@ import { AgentMenu } from './components/AgentMenu.tsx'
 const FIT_CHIP_RE = /^\w+'s\s+Resume$/i
 const FIT_INTRO =
   "Paste a job description below — or pick a sample — and I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain). If it's a strong match, I can tailor a résumé to that exact role."
+
+// "Show recent work" (Greeting.tsx's WORK_CHIP_TEXT) is the same kind of closed,
+// deterministic input as the Resume chip above — the frontend controls its exact
+// text, so there is no ambiguity to resolve. It used to route through /query like
+// any free-form question, relying on the model's action_intent judgment call to
+// avoid opening the fit UI. That judgment proved unreliable for this exact
+// question + the "human" caller-context the frontend always sends (resume-agent
+// issues #180–#190) — deriveRender's action_intent-wins-outright rule (see
+// lib/intent.ts) meant a single wrong roll hijacked the whole turn into the fit
+// UI. Rendering the top projects directly from the already-loaded profile is
+// both more reliable (no model judgment call at all) and instant (no network
+// round-trip) — see WORK_CHIP_TEXT's export comment in Greeting.tsx.
+const WORK_CHIP_PROJECT_COUNT = 3
+const WORK_MORE_INTRO = 'And the rest:'
 
 export function App() {
   const [profile, setProfile] = useState<ProfileVM | null>(null)
@@ -84,6 +104,67 @@ export function App() {
       return
     }
 
+    // The "Show recent work" starter chip is equally deterministic — render
+    // straight from the already-loaded profile, no /query round-trip and no
+    // dependence on the model's action_intent judgment (see the comment above
+    // for why that judgment isn't trustworthy for this exact case).
+    const first = profile?.contact.name.split(' ')[0]
+    if (q === WORK_CHIP_TEXT && profile && first) {
+      const topSlugs = mostRecentProjectSlugs(profile.projects, WORK_CHIP_PROJECT_COUNT)
+      const remaining = profile.projects.length - topSlugs.length
+      setTurns((prev) => [
+        ...prev,
+        {
+          key,
+          q,
+          answer: `Here are ${first}'s most recent projects:`,
+          confidence: 'high',
+          sources: [],
+          projectSlugs: topSlugs,
+          followups: remaining > 0 ? [remainingProjectsFollowup(first, remaining)] : [],
+          render: 'work',
+          pending: false,
+        },
+      ])
+      return
+    }
+
+    // "Show more" follow-up chips continuing a project listing — same
+    // deterministic treatment. Accumulates "already shown" from every prior
+    // 'work'-rendered turn in the WHOLE thread, not just the immediately-
+    // clicked chip's own turn: FollowupChips' shown_projects context only
+    // ever reflects the single preceding turn, so a third round (show more →
+    // show more again) would otherwise re-show the very first batch — this
+    // is the client-side fix for the exact "can't track shown projects across
+    // stateless turns" limitation this whole starter-chip flow is meant to
+    // close (the backend's /query has the same single-context limitation,
+    // since it's genuinely stateless — the frontend isn't, so it can do
+    // better here). Naturally handles a bare, no-prior-context click too
+    // (shown is empty, falls back to the same top-N as a fresh listing).
+    if (profile && first && isRemainingProjectsFollowup(q, first)) {
+      const shown = new Set(
+        turns.filter((t) => t.render === 'work').flatMap((t) => t.projectSlugs),
+      )
+      const remainingProjects = profile.projects.filter((p) => !shown.has(p.slug))
+      const nextSlugs = mostRecentProjectSlugs(remainingProjects, WORK_CHIP_PROJECT_COUNT)
+      const stillRemaining = remainingProjects.length - nextSlugs.length
+      setTurns((prev) => [
+        ...prev,
+        {
+          key,
+          q,
+          answer: WORK_MORE_INTRO,
+          confidence: 'high',
+          sources: [],
+          projectSlugs: nextSlugs,
+          followups: stillRemaining > 0 ? [remainingProjectsFollowup(first, stillRemaining)] : [],
+          render: 'work',
+          pending: false,
+        },
+      ])
+      return
+    }
+
     setTurns((prev) => [
       ...prev,
       { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], followups: [], render: resolveRender(q), pending: true },
@@ -134,7 +215,7 @@ export function App() {
           ),
         ),
       )
-  }, [])
+  }, [profile, turns])
 
   if (loadErr) {
     return (
