@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-07-10 — fix(types): ScrollNav's `useRef<T>()` called with zero arguments, which React 19's types no longer allow (the zero-arg overload was removed) — pass `undefined` explicitly, matching the actual `T | undefined` intent
+
 - 2026-07-10 — fix(work-chip): render "Show recent work" (and its "show more" follow-up) deterministically from the already-loaded profile instead of routing through /query's action_intent classification — that judgment proved unreliable for this exact question + the "human" caller-context the frontend always sends (resume-agent#180–#190)
 
 - 2026-07-09 — feat(query): consume `action_intent` to replace `FIT_RE` free-text routing — arbitrary phrasing like "show me [name]'s resume" now opens the job-fit tool via the model's own tool-call judgment instead of a fixed regex phrase list; the starter chip anchor stays a deterministic client-side shortcut (resume-agent#174, resume-agent#180)

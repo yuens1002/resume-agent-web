@@ -21,7 +21,7 @@ export function ScrollNav({ topId, bottomId }: Props) {
   const lastY      = useRef(typeof window !== 'undefined' ? window.scrollY : 0)
   const dirStartY  = useRef(lastY.current)   // scrollY when current direction settled
   const lastDir    = useRef<'up' | 'down' | null>(null)
-  const idle       = useRef<ReturnType<typeof setTimeout>>()
+  const idle       = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   showRef.current  = show
 
   // Hide when the user naturally arrives at the destination sentinel
