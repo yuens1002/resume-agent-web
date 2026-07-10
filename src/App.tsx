@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getProfile, ask as askApi } from './lib/api.ts'
 import { adaptProfile } from './lib/adaptProfile.ts'
-import { resolveRender, deriveRender } from './lib/intent.ts'
+import { resolveRender, deriveRender, mostRecentProjectSlugs, parseShownProjectSlugs } from './lib/intent.ts'
 import { ProfileContext } from './lib/profile-context.ts'
 import type { ProfileVM, Turn } from './lib/types.ts'
 import { Icon } from './components/Icon.tsx'
 import { Pill } from './components/ui.tsx'
-import { Greeting } from './components/Greeting.tsx'
+import { Greeting, WORK_CHIP_TEXT } from './components/Greeting.tsx'
 import { Composer } from './components/Composer.tsx'
 import { Turn as TurnView } from './components/Thread.tsx'
 import { ProjectDetail } from './components/cards.tsx'
@@ -23,6 +23,31 @@ import { AgentMenu } from './components/AgentMenu.tsx'
 const FIT_CHIP_RE = /^\w+'s\s+Resume$/i
 const FIT_INTRO =
   "Paste a job description below — or pick a sample — and I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain). If it's a strong match, I can tailor a résumé to that exact role."
+
+// "Show recent work" (Greeting.tsx's WORK_CHIP_TEXT) is the same kind of closed,
+// deterministic input as the Resume chip above — the frontend controls its exact
+// text, so there is no ambiguity to resolve. It used to route through /query like
+// any free-form question, relying on the model's action_intent judgment call to
+// avoid opening the fit UI. That judgment proved unreliable for this exact
+// question + the "human" caller-context the frontend always sends (resume-agent
+// issues #180–#190) — deriveRender's action_intent-wins-outright rule (see
+// lib/intent.ts) meant a single wrong roll hijacked the whole turn into the fit
+// UI. Rendering the top projects directly from the already-loaded profile is
+// both more reliable (no model judgment call at all) and instant (no network
+// round-trip) — see WORK_CHIP_TEXT's export comment in Greeting.tsx.
+const WORK_INTRO = "Here are Sunny's most recent projects:"
+const WORK_CHIP_PROJECT_COUNT = 3
+
+// The "show more" follow-up chip this branch generates below is the exact
+// same kind of closed, frontend-templated text (only the count varies) — and
+// the backend's own RULE_BREADTH asks the model to phrase its own remainder
+// offers identically ("What are Sunny's other N projects?"), so this also
+// catches "show more" follow-ups continuing from a model-driven 'work' turn.
+// Handling both deterministically avoids routing back through /query (and
+// its action_intent risk) for what is always the same "show the rest of the
+// list" request, regardless of how the first turn was rendered.
+const WORK_MORE_RE = /^What are Sunny's other \d+ projects\?$/
+const WORK_MORE_INTRO = 'And the rest:'
 
 export function App() {
   const [profile, setProfile] = useState<ProfileVM | null>(null)
@@ -84,6 +109,56 @@ export function App() {
       return
     }
 
+    // The "Show recent work" starter chip is equally deterministic — render
+    // straight from the already-loaded profile, no /query round-trip and no
+    // dependence on the model's action_intent judgment (see the comment above
+    // WORK_INTRO for why that judgment isn't trustworthy for this exact case).
+    if (q === WORK_CHIP_TEXT && profile) {
+      const topSlugs = mostRecentProjectSlugs(profile.projects, WORK_CHIP_PROJECT_COUNT)
+      const remaining = profile.projects.length - topSlugs.length
+      setTurns((prev) => [
+        ...prev,
+        {
+          key,
+          q,
+          answer: WORK_INTRO,
+          confidence: 'high',
+          sources: [],
+          projectSlugs: topSlugs,
+          followups: remaining > 0 ? [`What are Sunny's other ${remaining} projects?`] : [],
+          render: 'work',
+          pending: false,
+        },
+      ])
+      return
+    }
+
+    // "Show more" follow-up chips continuing a project listing — same
+    // deterministic treatment, using the shown_projects context the app
+    // already generates for this exact follow-up (see FollowupChips in
+    // components/ui.tsx). See the comment above WORK_MORE_RE.
+    if (WORK_MORE_RE.test(q) && profile) {
+      const shown = new Set(parseShownProjectSlugs(context))
+      const remainingProjects = profile.projects.filter((p) => !shown.has(p.slug))
+      const nextSlugs = mostRecentProjectSlugs(remainingProjects, WORK_CHIP_PROJECT_COUNT)
+      const stillRemaining = remainingProjects.length - nextSlugs.length
+      setTurns((prev) => [
+        ...prev,
+        {
+          key,
+          q,
+          answer: WORK_MORE_INTRO,
+          confidence: 'high',
+          sources: [],
+          projectSlugs: nextSlugs,
+          followups: stillRemaining > 0 ? [`What are Sunny's other ${stillRemaining} projects?`] : [],
+          render: 'work',
+          pending: false,
+        },
+      ])
+      return
+    }
+
     setTurns((prev) => [
       ...prev,
       { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], followups: [], render: resolveRender(q), pending: true },
@@ -134,7 +209,7 @@ export function App() {
           ),
         ),
       )
-  }, [])
+  }, [profile])
 
   if (loadErr) {
     return (

@@ -1,4 +1,4 @@
-import type { RenderKind } from './types.ts'
+import type { ProjectVM, RenderKind } from './types.ts'
 
 /**
  * Lightweight render-intent classifier — ported from the prototype's resolveIntent,
@@ -62,4 +62,35 @@ export function deriveRender(
 ): RenderKind {
   if (actionIntent?.tool === 'open_match_tool') return 'fit'
   return (projectSlugs?.length ?? 0) > 0 ? 'work' : preResponseRender
+}
+
+/**
+ * Slugs of the `count` most recently started projects, for the "Show recent
+ * work" starter chip's deterministic render (App.tsx) — no model judgment
+ * call involved. Mirrors the backend's `sortProjectsByRecency` fallback
+ * ordering (by `started` descending) for when `git_evidence` isn't available,
+ * which the frontend never fetches at all.
+ */
+export function mostRecentProjectSlugs(projects: ProjectVM[], count: number): string[] {
+  return [...projects]
+    .sort((a, b) => (b.started ?? '').localeCompare(a.started ?? ''))
+    .slice(0, count)
+    .map((p) => p.slug)
+}
+
+/**
+ * Parse the `shown_projects: slug1, slug2, ...` context string FollowupChips
+ * generates (components/ui.tsx) back into a slug array — the client-side
+ * counterpart of the backend's own `parseShownProjectSlugs` (resume-agent's
+ * query-prompt.ts), used by App.tsx's deterministic "show more" follow-up
+ * handling (see WORK_MORE_RE).
+ */
+export function parseShownProjectSlugs(context: string | undefined): string[] {
+  const prefix = 'shown_projects: '
+  if (!context?.startsWith(prefix)) return []
+  return context
+    .slice(prefix.length)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
 }

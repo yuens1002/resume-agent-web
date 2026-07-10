@@ -147,6 +147,8 @@ export interface ProjectVM {
   tagline: string
   status: string
   period: string
+  /** Raw backend `started` date, kept alongside the formatted `period` display string so callers can sort by recency (e.g. the deterministic "Show recent work" starter chip in App.tsx). */
+  started?: string
   tech: string[]
   problem: string
   role: string

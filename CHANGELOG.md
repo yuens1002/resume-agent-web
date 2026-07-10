@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-07-10 — fix(work-chip): render "Show recent work" (and its "show more" follow-up) deterministically from the already-loaded profile instead of routing through /query's action_intent classification — that judgment proved unreliable for this exact question + the "human" caller-context the frontend always sends (resume-agent#180–#190)
+
 - 2026-07-09 — feat(query): consume `action_intent` to replace `FIT_RE` free-text routing — arbitrary phrasing like "show me [name]'s resume" now opens the job-fit tool via the model's own tool-call judgment instead of a fixed regex phrase list; the starter chip anchor stays a deterministic client-side shortcut (resume-agent#174, resume-agent#180)
 - 2026-07-01 — fix(intent): derive render kind from `project_slugs` instead of a pre-response keyword guess — a question the frontend pre-classified as "about" (or no card) that the backend actually answers with specific projects now correctly renders the project card; stopgap ahead of real tool-calling on the backend (resume-agent#174)
 - 2026-07-01 — feat(cards): render per-project demo button label (backend `urlLabel` → `links.demoLabel`) with fallback to "Live demo"
