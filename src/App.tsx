@@ -7,6 +7,7 @@ import {
   mostRecentProjectSlugs,
   remainingProjectsFollowup,
   isRemainingProjectsFollowup,
+  FIT_FOLLOWUP_CHIP_TEXT,
 } from './lib/intent.ts'
 import { ProfileContext } from './lib/profile-context.ts'
 import type { ProfileVM, Turn } from './lib/types.ts'
@@ -95,8 +96,10 @@ export function App() {
     const key = `${Date.now()}-${seq.current++}`
     setMenu(false)
 
-    // The starter-chip anchor opens the match/tailor UI directly — no /query round-trip.
-    if (FIT_CHIP_RE.test(q)) {
+    // The starter-chip anchor and the "Run the full fit check" follow-up chip
+    // (resume-agent-web#26) both open the match/tailor UI directly — no /query
+    // round-trip. See FIT_FOLLOWUP_CHIP_TEXT's export comment in lib/intent.ts.
+    if (FIT_CHIP_RE.test(q) || q === FIT_FOLLOWUP_CHIP_TEXT) {
       setTurns((prev) => [
         ...prev,
         { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], projectSlugs: [], followups: [], render: 'fit', pending: false },
@@ -189,9 +192,15 @@ export function App() {
                     ? []
                     : (() => {
                         const asked = new Set(prev.map(turn => turn.q.toLowerCase().trim()))
-                        return (r.follow_up_suggestions ?? []).filter(
+                        const suggested = (r.follow_up_suggestions ?? []).filter(
                           f => typeof f === 'string' && !asked.has(f.toLowerCase().trim())
                         )
+                        // resume-agent-web#26: a narrated (not tool-opened) answer to a
+                        // fit question gets the deterministic "Run the full fit check"
+                        // chip as its explicit opt-in into the match/tailor UI — driven
+                        // by the backend's route classifier (resume-agent#195/#199),
+                        // never re-guessed from question/answer text.
+                        return r.fit_question ? [FIT_FOLLOWUP_CHIP_TEXT, ...suggested] : suggested
                       })(),
                   pending: false,
                 }

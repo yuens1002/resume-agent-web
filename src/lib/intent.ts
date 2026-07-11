@@ -97,3 +97,12 @@ export function remainingProjectsFollowup(firstName: string, count: number): str
 export function isRemainingProjectsFollowup(q: string, firstName: string): boolean {
   return new RegExp(`^What are ${escapeRegExp(firstName)}'s other \\d+ projects?\\?$`).test(q)
 }
+
+// The "Run the full fit check" chip (resume-agent-web#26): after resume-agent's
+// narrate-first routing pivot (resume-agent#195/#199), a question ABOUT fit no
+// longer opens the match tool itself — it narrates, and the frontend offers
+// this deterministic follow-up chip as the explicit opt-in, same client-side
+// pattern as FIT_CHIP_RE / WORK_CHIP_TEXT in App.tsx (no /query round-trip on
+// click). Whether to show it is read straight from the backend's
+// QueryResponse.fit_question flag (App.tsx) — never re-guessed from text.
+export const FIT_FOLLOWUP_CHIP_TEXT = 'Run the full fit check'

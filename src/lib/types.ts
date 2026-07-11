@@ -79,6 +79,11 @@ export interface QueryResponse {
   // envelope (resume-agent#174) — a first-class routing signal, not derived
   // from answer text. null/absent means no tool was called.
   action_intent?: { tool: string } | null
+  // True when resume-agent's route classifier (resume-agent#195/#199) routed
+  // the question as narrate_fit — a question ABOUT fit, answered in prose.
+  // Drives the "Run the full fit check" follow-up chip (resume-agent-web#26);
+  // never re-derived from question/answer text on this side.
+  fit_question?: boolean
 }
 
 // ── Backend: POST /match ──
