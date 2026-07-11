@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-07-11 — feat(chips): add "Run the full fit check" follow-up chip from `fit_question` flag — after resume-agent's narrate-first routing pivot (resume-agent#195/#199), a question ABOUT fit narrates instead of opening the match tool; the frontend now offers the tool as a deterministic follow-up chip (same client-side, no-round-trip pattern as the resume/work starter chips), driven by the backend's `QueryResponse.fit_question` signal rather than re-guessing intent from text
+
 - 2026-07-10 — fix(types): ScrollNav's `useRef<T>()` called with zero arguments, which React 19's types no longer allow (the zero-arg overload was removed) — pass `undefined` explicitly, matching the actual `T | undefined` intent
 
 - 2026-07-10 — fix(work-chip): render "Show recent work" (and its "show more" follow-up) deterministically from the already-loaded profile instead of routing through /query's action_intent classification — that judgment proved unreliable for this exact question + the "human" caller-context the frontend always sends (resume-agent#180–#190)
