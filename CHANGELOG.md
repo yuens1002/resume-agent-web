@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 2026-07-13 — feat(greeting): replace bio lede with provenance messaging — the landing paragraph under the headline no longer shows the candidate's profile summary; it now explains how to interact (ask a question, or click a starter chip) and states the honesty stance (cited work is backed by git history)
+
 - 2026-07-11 — feat(chips): add "Run the full fit check" follow-up chip from `fit_question` flag — after resume-agent's narrate-first routing pivot (resume-agent#195/#199), a question ABOUT fit narrates instead of opening the match tool; the frontend now offers the tool as a deterministic follow-up chip (same client-side, no-round-trip pattern as the resume/work starter chips), driven by the backend's `QueryResponse.fit_question` signal rather than re-guessing intent from text
 
 - 2026-07-10 — fix(types): ScrollNav's `useRef<T>()` called with zero arguments, which React 19's types no longer allow (the zero-arg overload was removed) — pass `undefined` explicitly, matching the actual `T | undefined` intent
