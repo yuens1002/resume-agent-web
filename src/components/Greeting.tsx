@@ -21,7 +21,10 @@ export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
     <div className="greet turn-anim">
       <span className="greet-eyebrow">A live, queryable résumé</span>
       <h1>{HEADLINE}</h1>
-      <p className="lede">{profile.summary}</p>
+      <p className="lede">
+        Ask the agent any interviewing question, or click a starter chip. Cited work is backed
+        by git history and signed cryptographically. Verifiable, not just claimed.
+      </p>
       <div className="chiprow">
         {starters.map((s, i) => (
           <Chip key={s} hint={i === 0} onClick={() => onAsk(s)}>
