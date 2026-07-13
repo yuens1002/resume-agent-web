@@ -3,6 +3,7 @@ import type {
   QueryResponse,
   MatchResponse,
   ResumeResponse,
+  VerifyGitEvidenceResponse,
 } from './types.ts'
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? 'https://agent.yuens.me').replace(/\/$/, '')
@@ -10,6 +11,7 @@ const API_BASE = (import.meta.env.VITE_API_BASE ?? 'https://agent.yuens.me').rep
 export const SITE_URL = (import.meta.env.VITE_SITE_URL ?? 'https://yuens.me').replace(/\/$/, '')
 export const MCP_URL = `${API_BASE}/public-mcp`
 export const AGENT_CARD_URL = `${API_BASE}/.well-known/agent-card.json`
+export const OEP_PUBLIC_KEY_URL = `${API_BASE}/.well-known/oep-public-key.json`
 
 async function postJSON<T>(path: string, body: unknown, headers?: Record<string, string>): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -46,6 +48,19 @@ export function ask(question: string, context?: string): Promise<QueryResponse> 
   const body: Record<string, string> = { question }
   if (context) body.context = context
   return postJSON<QueryResponse>('/query', body, { 'x-agent-type': 'human' })
+}
+
+/**
+ * GET /verify/git-evidence — OEP Phase 3 signature check for one project's git
+ * evidence. The backend does the actual crypto verification; this just relays
+ * the plain-English verdict (pass/fail/not_present/unsigned/key_not_configured).
+ */
+export async function verifyGitEvidence(slug: string): Promise<VerifyGitEvidenceResponse> {
+  const res = await fetch(`${API_BASE}/verify/git-evidence?slug=${encodeURIComponent(slug)}`, {
+    headers: { Accept: 'application/json' },
+  })
+  if (!res.ok) throw new ApiError(res.status, `/verify/git-evidence → ${res.status}`)
+  return res.json() as Promise<VerifyGitEvidenceResponse>
 }
 
 /** POST /match — deterministic weighted (50/30/20) job-fit score. */
