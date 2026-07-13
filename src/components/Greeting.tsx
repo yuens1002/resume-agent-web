@@ -23,7 +23,7 @@ export function Greeting({ onAsk }: { onAsk: (q: string) => void }) {
       <h1>{HEADLINE}</h1>
       <p className="lede">
         Ask the agent any interviewing question, or click a starter chip. Cited work is backed
-        by git history and signed cryptographically. Verifiable, not just claimed.
+        by git history. Verifiable, not just claimed.
       </p>
       <div className="chiprow">
         {starters.map((s, i) => (
