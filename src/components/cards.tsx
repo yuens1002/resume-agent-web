@@ -1,8 +1,42 @@
+import { useEffect, useState } from 'react'
 import { useProfile } from '../lib/profile-context.ts'
-import type { ProjectVM } from '../lib/types.ts'
+import type { ProjectVM, VerifyGitEvidenceResponse } from '../lib/types.ts'
+import { OEP_PUBLIC_KEY_URL, verifyGitEvidence } from '../lib/api.ts'
 import { Icon } from './Icon.tsx'
 import { Badge, Btn, Card, TechPills } from './ui.tsx'
 import { SlidePanel } from './SlidePanel.tsx'
+
+/* ── VerifyBadge — OEP Phase 3: proves a project's git evidence is signed,
+   not just claimed (resume-agent-web#28's landing copy). Only renders on a
+   'pass' verdict — every other state (not yet synced, unsigned, misconfigured
+   key, network error) stays silent rather than showing an alarming or
+   half-finished badge. */
+function VerifyBadge({ slug }: { slug: string }) {
+  const [result, setResult] = useState<VerifyGitEvidenceResponse | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setResult(null)
+    verifyGitEvidence(slug)
+      .then((r) => {
+        if (!cancelled) setResult(r)
+      })
+      .catch(() => {
+        /* stay silent — see comment above */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
+
+  if (result?.evidence_signature !== 'pass') return null
+  return (
+    <a className="badge verify-pass" href={OEP_PUBLIC_KEY_URL} target="_blank" rel="noreferrer" title={result.summary}>
+      <Icon name="check" style={{ width: 11, height: 11 }} />
+      Verified
+    </a>
+  )
+}
 
 /* ── Featured case study ── */
 function FeaturedCase({ project, onOpen }: { project: ProjectVM; onOpen: (slug: string) => void }) {
@@ -127,6 +161,7 @@ export function ProjectDetail({ slug, onClose }: { slug: string; onClose: () => 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <Badge>{p.status}</Badge>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 11.5, color: 'var(--ink-soft)' }}>{p.period}</span>
+          <VerifyBadge slug={p.slug} />
         </div>
         <p style={{ fontFamily: 'var(--serif)', fontSize: 20, lineHeight: 1.45, margin: 0, color: 'var(--ink)' }}>
           {p.tagline}

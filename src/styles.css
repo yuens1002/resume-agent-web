@@ -217,6 +217,13 @@ body.voice-sans .prose.small { font-size: 16px; }
   border: 1px solid var(--accent-line);
 }
 .badge.muted { background: var(--paper-2); color: var(--ink-soft); border-color: var(--hair); }
+.badge.verify-pass {
+  background: color-mix(in oklab, var(--good) 12%, var(--paper));
+  color: color-mix(in oklab, var(--good) 60%, var(--ink));
+  border-color: color-mix(in oklab, var(--good) 26%, transparent);
+  text-decoration: none; cursor: pointer;
+}
+.badge.verify-pass:hover { border-color: color-mix(in oklab, var(--good) 45%, transparent); }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 .feat { display: grid; grid-template-columns: 1.1fr .9fr; }

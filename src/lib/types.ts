@@ -86,6 +86,19 @@ export interface QueryResponse {
   fit_question?: boolean
 }
 
+// ── Backend: GET /verify/git-evidence?slug= ──
+export type EvidenceSignatureState = 'pass' | 'fail' | 'not_present' | 'unsigned' | 'key_not_configured'
+export interface VerifyGitEvidenceResponse {
+  slug: string
+  domain?: string
+  oep_phase1?: string
+  evidence_signature: EvidenceSignatureState
+  key_fingerprint?: string
+  signed_at?: string
+  verified_at?: string
+  summary: string
+}
+
 // ── Backend: POST /match ──
 export interface MatchScoring {
   skills: { matched: string[]; partial: string[]; missing: string[]; score: number }
