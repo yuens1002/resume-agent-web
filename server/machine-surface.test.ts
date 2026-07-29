@@ -53,6 +53,26 @@ describe('clamp', () => {
   it('treats undefined as empty', () => {
     expect(clamp(undefined)).toBe('')
   })
+
+  it('hard-cuts an unbroken token rather than dropping a character at lastIndexOf -1', () => {
+    const out = clamp('x'.repeat(200), 60)
+    expect(out).toBe(`${'x'.repeat(59)}…`)
+    expect(out.length).toBe(60)
+  })
+
+  it('ignores a word boundary too early to be worth honouring', () => {
+    // One short word then a long identifier: backing up to the only space would leave "a…".
+    const out = clamp(`a ${'y'.repeat(200)}`, 60)
+    expect(out.startsWith('a y')).toBe(true)
+    expect(out.length).toBe(60)
+  })
+
+  it('never exceeds max', () => {
+    for (const max of [20, 60, 160]) {
+      expect(clamp('word '.repeat(80), max).length).toBeLessThanOrEqual(max)
+      expect(clamp('z'.repeat(400), max).length).toBeLessThanOrEqual(max)
+    }
+  })
 })
 
 describe('ogImageForCover', () => {
@@ -155,5 +175,11 @@ describe('buildSitemap', () => {
     expect(xml).toContain('<?xml version="1.0" encoding="UTF-8"?>')
     expect(xml).toContain(`<loc>${SITE_URL}</loc>`)
     expect(xml).not.toContain('/projects')
+  })
+
+  it('omits /observations when the profile cache is empty, since that route 503s', () => {
+    // Observations load from a separate fetch, so they can be present while the profile
+    // is not — the sitemap must not advertise a URL the route cannot serve.
+    expect(buildSitemap(null, [obs({})])).not.toContain('/observations')
   })
 })

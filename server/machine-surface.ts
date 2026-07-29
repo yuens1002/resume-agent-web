@@ -118,8 +118,14 @@ const roleStr = (p: PublicProfile): string => roleList(p).join(' / ')
 export function clamp(s: string | undefined, max = 160): string {
   const t = (s ?? '').trim().replace(/\s+/g, ' ')
   if (t.length <= max) return t
-  const cut = t.slice(0, max - 5)
-  return `${cut.slice(0, cut.lastIndexOf(' ')).trim()}…`
+  const cut = t.slice(0, max - 1) // leave room for the ellipsis
+  const lastSpace = cut.lastIndexOf(' ')
+  // Prefer a word boundary, but only when one exists late enough to be worth honouring.
+  // Backend copy carries long unbroken identifiers and URLs, which can leave the only
+  // space near the start (or none at all) — backing up to it would throw away most of
+  // the budget, so hard-cut instead of returning a near-empty description.
+  const body = lastSpace > (max - 1) * 0.6 ? cut.slice(0, lastSpace) : cut
+  return `${body.trimEnd()}…`
 }
 
 /** SEO meta description = the live summary, trimmed to ~155 chars at a word boundary. */
@@ -473,9 +479,11 @@ export function buildSitemap(p: PublicProfile | null, obs: PublicObservation[]):
       urls.push({ loc: `${SITE_URL}/projects/${pr.slug}`, lastmod: profileDay, priority: '0.7' })
     }
   }
-  // Per-observation pages are not published yet (see isAuthoredObservation), so the
-  // index is the only observation URL that belongs in the sitemap.
-  if (obs.length) urls.push({ loc: `${SITE_URL}/observations`, lastmod: newestObs, priority: '0.6' })
+  // Per-observation pages are not published yet (see isAuthoredObservation), so the index
+  // is the only observation URL that belongs in the sitemap. It is gated on the profile
+  // too: the page renders the profile masthead, so with an empty profile cache the route
+  // answers 503 — advertising it in that state would point crawlers at a dead URL.
+  if (p && obs.length) urls.push({ loc: `${SITE_URL}/observations`, lastmod: newestObs, priority: '0.6' })
 
   const body = urls
     .map(
