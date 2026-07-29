@@ -2,14 +2,29 @@ import { readFile } from 'node:fs/promises'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { Hono } from 'hono'
+import type { PublicProfile } from '../src/lib/types.ts'
 import {
   refreshProfile,
   getProfile,
+  refreshObservations,
+  getObservations,
+  isAuthoredObservation,
   buildHeadInjection,
   buildNoscript,
   buildLlmsTxt,
+  buildSitemap,
+  buildProjectsIndex,
+  buildProjectPage,
+  buildObservationsIndex,
+  projectsIndexMeta,
+  projectPageMeta,
+  projectPageHead,
+  observationsIndexMeta,
+  renderShell,
+  renderStaticPage,
   metaDescription,
   ROBOTS_TXT,
+  SITE_URL,
 } from './machine-surface.ts'
 
 const PORT = parseInt(process.env.PORT ?? '8787', 10)
@@ -97,10 +112,9 @@ app.get('/llms.txt', (c) => {
 app.get('/.well-known/agent-card.json', (c) => c.redirect(`${RESUME_API_BASE}/.well-known/agent-card.json`, 302))
 app.get('/openapi.json', (c) => c.redirect(`${RESUME_API_BASE}/openapi.json`, 302))
 
-// Serve the SPA with the machine surface injected: JSON-LD + discovery links in <head>,
-// and a crawlable <noscript> profile in <body> (so a non-JS fetch isn't an empty shell).
+// The built shell — head (fonts, favicons, hashed CSS/JS) is shared by every route.
 let baseHtml: string | null = null
-async function renderIndex(): Promise<string | null> {
+async function getBaseHtml(): Promise<string | null> {
   if (baseHtml === null) {
     try {
       baseHtml = await readFile('./dist/index.html', 'utf8')
@@ -108,26 +122,80 @@ async function renderIndex(): Promise<string | null> {
       return null
     }
   }
+  return baseHtml
+}
+
+// Serve the SPA with the machine surface injected: JSON-LD + discovery links in <head>,
+// and a crawlable <noscript> profile in <body> (so a non-JS fetch isn't an empty shell).
+async function renderIndex(): Promise<string | null> {
+  const base = await getBaseHtml()
+  if (!base) return null
   const p = getProfile()
-  if (!p) return baseHtml
+  if (!p) return base.replace(/%VITE_SITE_URL%/g, SITE_URL)
   // Title + description come from the live profile (name/summary) — nothing person-specific
   // is hardcoded in the served HTML, so a fork publishes its own identity automatically.
-  const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
-  const desc = escAttr(metaDescription(p))
   const name = p.contact?.name?.trim()
-  const title = escAttr(name ? `${name} — a résumé you can talk to` : 'A résumé you can talk to')
-  return baseHtml
-    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
-    .replace(/(<meta property="og:title" content=")[^"]*(")/, (_m, a, b) => a + title + b)
-    .replace(/(<meta name="description" content=")[^"]*(")/, (_m, a, b) => a + desc + b)
-    .replace(/(<meta property="og:description" content=")[^"]*(")/, (_m, a, b) => a + desc + b)
-    .replace('</head>', `${buildHeadInjection(p)}\n</head>`)
-    .replace('</body>', `${buildNoscript(p)}</body>`)
+  const meta = {
+    title: name ? `${name} — a résumé you can talk to` : 'A résumé you can talk to',
+    description: metaDescription(p),
+    path: '',
+  }
+  return renderShell(base, meta, buildHeadInjection(p)).replace('</body>', `${buildNoscript(p)}</body>`)
 }
 
 app.get('/', async (c) => {
   const html = await renderIndex()
   return html ? c.html(html) : c.text('Build not found. Run `npm run build`.', 500)
+})
+
+/*
+ * Crawlable per-route pages. The SPA has no client-side router, so these are real
+ * standalone documents (same shell, React bundle dropped) rather than SPA routes with
+ * injected meta. Everything is driven by the cached backend data — no authored content
+ * here — so a fork publishes its own pages automatically.
+ */
+app.get('/sitemap.xml', (c) => {
+  const xml = buildSitemap(getProfile(), getObservations().filter(isAuthoredObservation))
+  return c.body(xml, 200, { 'Content-Type': 'application/xml; charset=UTF-8' })
+})
+
+/** Shared preamble for the static pages: the built shell + a loaded profile, or an error. */
+type PageDeps =
+  | { ok: true; base: string; p: PublicProfile }
+  | { ok: false; error: string; status: 500 | 503 }
+
+async function staticPageDeps(): Promise<PageDeps> {
+  const base = await getBaseHtml()
+  if (!base) return { ok: false, error: 'Build not found. Run `npm run build`.', status: 500 }
+  const p = getProfile()
+  if (!p) return { ok: false, error: 'Profile temporarily unavailable.', status: 503 }
+  return { ok: true, base, p }
+}
+
+app.get('/projects', async (c) => {
+  const d = await staticPageDeps()
+  if (!d.ok) return c.text(d.error, d.status)
+  return c.html(renderStaticPage(d.base, projectsIndexMeta(d.p), buildProjectsIndex(d.p)))
+})
+
+app.get('/projects/:slug', async (c) => {
+  const d = await staticPageDeps()
+  if (!d.ok) return c.text(d.error, d.status)
+  const pr = d.p.projects?.find((x) => x.slug === c.req.param('slug'))
+  // A real 404 — never a soft-200 SPA shell for a slug that doesn't exist.
+  if (!pr) return c.text('Not found', 404)
+  return c.html(
+    renderStaticPage(d.base, projectPageMeta(pr), buildProjectPage(pr, d.p), projectPageHead(pr, d.p)),
+  )
+})
+
+// Index only. Per-observation pages wait on a backend filter for machine-generated
+// sync entries (resume-agent#222) — publishing those as pages would be thin content.
+app.get('/observations', async (c) => {
+  const d = await staticPageDeps()
+  if (!d.ok) return c.text(d.error, d.status)
+  const obs = getObservations().filter(isAuthoredObservation)
+  return c.html(renderStaticPage(d.base, observationsIndexMeta(d.p), buildObservationsIndex(d.p, obs)))
 })
 
 // Real static assets (hashed bundles, favicons) straight from disk.
@@ -139,12 +207,20 @@ app.get('*', async (c) => {
   return html ? c.html(html) : c.text('Build not found. Run `npm run build`.', 500)
 })
 
-// Load the profile into cache before serving, then refresh every 10 min (serve last-known on failure).
-await refreshProfile()
-setInterval(() => void refreshProfile(), 10 * 60_000)
+// Load the caches before serving, then refresh every 10 min (serve last-known on failure).
+await Promise.all([refreshProfile(), refreshObservations()])
+setInterval(() => {
+  void refreshProfile()
+  void refreshObservations()
+}, 10 * 60_000)
 
 serve({ fetch: app.fetch, port: PORT }, () => {
   console.log(`portfolio server on http://localhost:${PORT}  → proxying /resume to ${RESUME_API_BASE}`)
+  const obs = getObservations()
   console.log(`[machine] profile cache: ${getProfile() ? 'loaded' : 'EMPTY'} · /robots.txt /llms.txt + JSON-LD/noscript active`)
+  console.log(
+    `[machine] observations: ${obs.filter(isAuthoredObservation).length}/${obs.length} authored · ` +
+      `/sitemap.xml /projects /projects/:slug /observations serving real pages`,
+  )
   if (!RESUME_AGENT_API_KEY) console.warn('[warn] RESUME_AGENT_API_KEY is unset — /api/resume will fail against a key-gated backend.')
 })

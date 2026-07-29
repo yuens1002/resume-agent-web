@@ -3,14 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- canonical/og:url come from VITE_SITE_URL at build; title + description are injected
-         from the live profile at request time. Generic fallbacks below for dev / no-JS. -->
+    <!-- Every tag below is a placeholder the server rewrites per request (see
+         machine-surface.ts applyMeta): title/description from the live profile, canonical +
+         og:url from the route, og:image per project. %VITE_SITE_URL% is substituted by Vite
+         at build time when the env var is set, and repaired server-side when it isn't.
+         The literal values here are the dev / build-only fallbacks. -->
     <link rel="canonical" href="%VITE_SITE_URL%" />
     <title>A résumé you can talk to</title>
     <meta name="description" content="A live, queryable résumé — ask questions, score a job's fit, and generate a tailored résumé." />
     <meta property="og:title" content="A résumé you can talk to" />
     <meta property="og:description" content="A live, queryable résumé — ask anything, score a job fit, generate a tailored résumé." />
     <meta property="og:url" content="%VITE_SITE_URL%" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="%VITE_SITE_URL%/og-default.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="A résumé you can talk to" />
+    <meta name="twitter:description" content="A live, queryable résumé — ask anything, score a job fit, generate a tailored résumé." />
+    <meta name="twitter:image" content="%VITE_SITE_URL%/og-default.jpg" />
     <meta name="theme-color" content="#f5f2ea" />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />

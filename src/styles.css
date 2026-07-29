@@ -46,6 +46,11 @@ body {
 ::selection { background: var(--accent-wash); }
 button { font-family: inherit; color: inherit; cursor: pointer; }
 a { color: inherit; }
+/* UI chrome renders as <button> in the SPA and as <a> on the server-rendered pages —
+   these are affordances, never prose, so they never carry an underline either way.
+   (.richtext a keeps its underline; prose links are the exception, not these.) */
+.hdr-name, .prow, .chip, .btn, .badge { text-decoration: none; }
+a.chip, a.badge { display: inline-block; }
 
 /* paper grain — very subtle warmth */
 
@@ -507,12 +512,32 @@ body.voice-sans .prose.small { font-size: 16px; }
   font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--ink-soft); margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--hair);
 }
-.dsec p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--ink-2); }
+/* Backend copy carries unbreakable identifiers — e.g. a 42-char
+   "(NONE/ACTIVE/TRIAL/EXPIRED/CANCELLED/INACTIVE)" in a project highlight — which push
+   past a phone viewport without this. Shared by the SPA's slide panel and the
+   server-rendered project pages. */
+.dsec p { margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--ink-2); overflow-wrap: anywhere; }
 .dsec ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
-.dsec li { position: relative; padding-left: 22px; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.dsec li { position: relative; padding-left: 22px; font-size: 15px; line-height: 1.55; color: var(--ink-2); overflow-wrap: anywhere; }
 .dsec li::before {
   content: ""; position: absolute; left: 4px; top: 9px;
   width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
+
+/* observations index (server-rendered /observations) — collapsed long-form notes */
+.obslist { list-style: none; padding: 0; margin: 24px 0 0; }
+.obsrow { border-top: 1px solid var(--hair); padding: 14px 0; }
+.obsrow summary {
+  cursor: pointer; display: flex; flex-wrap: wrap; gap: 9px; align-items: center;
+  list-style: none;
+}
+.obsrow summary::-webkit-details-marker { display: none; }
+.obs-excerpt { flex: 1 1 100%; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+.obsrow summary:hover .obs-excerpt { color: var(--accent-ink); }
+.obsrow details[open] .obs-excerpt { display: none; }
+.obs-body {
+  margin: 12px 0 12px; font-size: 15.5px; line-height: 1.65; color: var(--ink-2);
+  white-space: pre-wrap; overflow-wrap: anywhere;
 }
 
 /* about / timeline + skills */
