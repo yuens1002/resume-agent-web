@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   clamp,
   ogImageForCover,
-  isAuthoredObservation,
+  hasDetailPage,
+  observationTitles,
+  DETAIL_PAGE_MIN_CHARS,
   applyMeta,
   renderStaticPage,
   buildSitemap,
@@ -88,18 +90,71 @@ describe('ogImageForCover', () => {
   })
 })
 
-describe('isAuthoredObservation', () => {
-  it('keeps a substantial authored note', () => {
-    expect(isAuthoredObservation(obs({ topics: ['OEP'] }))).toBe(true)
+describe('hasDetailPage', () => {
+  it('gives a substantial note its own page', () => {
+    expect(hasDetailPage(obs({ content: 'x'.repeat(DETAIL_PAGE_MIN_CHARS + 1) }))).toBe(true)
   })
 
-  it('drops machine-generated sync entries by topic', () => {
-    expect(isAuthoredObservation(obs({ topics: ['resume-agent', 'version_drift'] }))).toBe(false)
-    expect(isAuthoredObservation(obs({ topics: ['sync_warning'] }))).toBe(false)
+  it('keeps a note with nothing beyond its excerpt inline on the index', () => {
+    // A 55-char note published as a standalone URL would be thin content and would
+    // duplicate the index besides.
+    expect(hasDetailPage(obs({ content: 'discounnet issue resolution completed, the what and how' }))).toBe(false)
+    expect(hasDetailPage(obs({ content: 'x'.repeat(DETAIL_PAGE_MIN_CHARS) }))).toBe(false)
   })
 
-  it('drops entries too short to be worth a crawlable page', () => {
-    expect(isAuthoredObservation(obs({ content: 'too short' }))).toBe(false)
+  it('is a length judgment only — never an authored/machine one', () => {
+    // That call belongs to the backend's `authored` flag (resume-agent#222); a long
+    // machine entry must not qualify here by being long, because it never reaches us.
+    expect(hasDetailPage(obs({ content: 'y'.repeat(500), topics: ['version_drift'] }))).toBe(true)
+  })
+})
+
+describe('observationTitles', () => {
+  const long = (s: string) => `${s} ${'x'.repeat(300)}`
+
+  it('leaves a unique title alone', () => {
+    const a = obs({ id: 'a', content: long('Alpha note'), date: '2026-01-01' })
+    const b = obs({ id: 'b', content: long('Beta note'), date: '2026-01-01' })
+    const t = observationTitles([a, b])
+    expect(t.get('a')).not.toBe(t.get('b'))
+    expect(t.get('a')).not.toContain('·')
+  })
+
+  it('disambiguates a collision with the topic that actually differs', () => {
+    // Two notes captured in one session: same opening, same date, same type.
+    // A longer excerpt does not separate these — measured against the live corpus,
+    // collisions survive to 140 chars.
+    const shared = long('MCP reconnection issue resolved. Root cause: private endpoint')
+    const a = obs({ id: 'a', content: shared, date: '2026-04-30', topics: ['MCP', 'OAuth', 'JWT'] })
+    const b = obs({ id: 'b', content: shared, date: '2026-04-30', topics: ['MCP', 'OAuth', 'auth'] })
+    const t = observationTitles([a, b])
+    expect(t.get('a')).not.toBe(t.get('b'))
+    expect(t.get('a')).toContain('JWT')
+    expect(t.get('b')).toContain('auth')
+    // The shared topics must not be used — they don't distinguish anything.
+    expect(t.get('a')).not.toContain('OAuth')
+  })
+
+  it('falls back to a short id when topics cannot separate them', () => {
+    const shared = long('Identical opening')
+    const a = obs({ id: 'aaaaaa11-0000', content: shared, date: '2026-01-01', topics: ['same'] })
+    const b = obs({ id: 'bbbbbb22-0000', content: shared, date: '2026-01-01', topics: ['same'] })
+    const t = observationTitles([a, b])
+    expect(t.get(a.id)).not.toBe(t.get(b.id))
+    expect(t.get(a.id)).toContain('aaaaaa')
+    expect(t.get(b.id)).toContain('bbbbbb')
+  })
+
+  it('produces a unique title for every note in the set', () => {
+    const shared = long('Same start')
+    const set = [
+      obs({ id: '1', content: shared, date: '2026-01-01', topics: ['x'] }),
+      obs({ id: '2', content: shared, date: '2026-01-01', topics: ['y'] }),
+      obs({ id: '3', content: shared, date: '2026-01-01', topics: ['z'] }),
+      obs({ id: '4', content: long('Different'), date: '2026-01-01' }),
+    ]
+    const titles = [...observationTitles(set).values()]
+    expect(new Set(titles).size).toBe(set.length)
   })
 })
 
@@ -165,9 +220,18 @@ describe('buildSitemap', () => {
     expect(xml).toContain('<lastmod>2026-07-29</lastmod>')
   })
 
-  it('omits /observations entirely when nothing survives the filter', () => {
+  it('omits /observations entirely when there are none', () => {
     expect(buildSitemap(profile, [])).not.toContain('/observations')
     expect(buildSitemap(profile, [obs({})])).toContain(`<loc>${SITE_URL}/observations</loc>`)
+  })
+
+  it('lists a detail URL only for notes that actually have a page', () => {
+    const long = obs({ id: 'long-one', content: 'x'.repeat(DETAIL_PAGE_MIN_CHARS + 1) })
+    const short = obs({ id: 'short-one', content: 'brief' })
+    const xml = buildSitemap(profile, [long, short])
+    expect(xml).toContain(`<loc>${SITE_URL}/observations/long-one</loc>`)
+    // The short note renders inline on the index and has no URL of its own.
+    expect(xml).not.toContain('short-one')
   })
 
   it('still emits a valid document when the profile cache is empty', () => {
