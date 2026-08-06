@@ -62,6 +62,37 @@ LLM / crawler ──▶ this server  →  JSON-LD · <noscript> profile · /llms
   `schema.org/Person` JSON-LD, a crawlable `<noscript>` profile, discovery links, real
   `/robots.txt` + `/llms.txt`, and `/.well-known/agent-card.json` → backend. All derived
   from the live `/info` (cached, refreshed every 10 min) — see `server/machine-surface.ts`.
+- **Crawlable pages:** the SPA has no client-side router, so `/projects`, `/projects/:slug`,
+  `/observations` and `/observations/:id` are real standalone documents — the built shell
+  with the React bundle dropped and content server-rendered in, each with its own title,
+  description and self-canonical. Project pages come from `/info`. Observation pages are
+  **opt-in only** — see below. `/sitemap.xml` is generated from exactly what is published.
+
+### What gets a URL — the publish allowlist
+
+**Only an observation tagged with the `publish` topic is rendered as a page or listed in
+`/sitemap.xml`.** An untagged note has no URL, and `/observations/:id` returns `404` for it.
+
+This is an allowlist on purpose. `authored: true` (resume-agent#222) answers *"did a human
+write this"* — it does not answer *"was this written to be read by a stranger"*, and nothing
+upstream does. The corpus is a working thought log, so it accumulates material that is
+authored and harmless-looking yet not for publication. Selecting by exclusion means
+enumerating those categories in advance, which is a denylist, and a denylist fails open.
+
+Publishing is therefore a deliberate act: tag the note through the private MCP, and it
+appears. Nothing appears by default, so an untagged note is unpublished by construction
+rather than by anyone noticing what is wrong with it.
+
+The tag is configurable via `OBSERVATION_PUBLISH_TAG` (default `publish`), and the filter is
+applied once at the cache boundary in `server/machine-surface.ts`, so the index, the detail
+pages and the sitemap cannot disagree about what is public — a route added later inherits it
+without having to know it exists.
+
+Run `npm run preflight` before shipping. It scans the published set for secrets and PII,
+flags notes shaped like private working material, checks every sitemap URL resolves with a
+unique canonical and title, and diffs what the deploy would newly expose against the live
+sitemap. It fails if the allowlist ever matches the entire corpus — an allowlist that admits
+everything is a denylist wearing a hat.
 
 **Stack:** React 19 · Vite · TypeScript · Hono · `react-markdown` · `qrcode.react`. Design
 system is the hand-authored `src/styles.css`. Deploys to Railway (or any Node host).
