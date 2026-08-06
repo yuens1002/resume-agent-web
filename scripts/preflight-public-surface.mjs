@@ -88,12 +88,35 @@ if (!PRIVATE_REPOS.length) {
 }
 
 // ── 1. corpus content ──────────────────────────────────────────────────────────
+// Scans the ALLOWLIST — the notes actually published — not the whole authored set.
+// Scanning everything would drown real findings in notes that were never going to
+// ship. The one check that does look at the whole set is the allowlist ratio below,
+// because a filter that silently matched everything is the failure worth catching.
 section('corpus')
 let corpus = []
+let authoredTotal = 0
+const PUBLISH_TAG = (process.env.OBSERVATION_PUBLISH_TAG ?? 'publish').toLowerCase()
 try {
   const body = await getJSON(`${API}/observations?authored=1&limit=500`)
-  corpus = body.observations ?? []
-  record(true, 'fetched authored corpus', `${corpus.length} notes`)
+  const authored = body.observations ?? []
+  authoredTotal = authored.length
+  corpus = authored.filter((o) => (o.topics ?? []).some((t) => t.toLowerCase() === PUBLISH_TAG))
+  // Not a failure. Zero tagged is a legitimate, deliberate state — it ships the
+  // project pages and publishes no notes — and gating on it would block that deploy.
+  // The dangerous direction is the opposite one, checked immediately below.
+  record(true, `notes tagged "${PUBLISH_TAG}"`, `${corpus.length} of ${authoredTotal} authored`)
+  if (corpus.length === 0 && authoredTotal > 0) {
+    console.log(`  NOTE   no note is tagged — this deploy publishes zero observation pages.`)
+    console.log(`         Tag one via the private MCP by adding the "${PUBLISH_TAG}" topic.`)
+  }
+  // An allowlist that admits everything is a denylist wearing a hat. If the tag ever
+  // ends up on the whole corpus, the deliberate-selection property is gone and this
+  // should be looked at rather than shipped.
+  record(
+    authoredTotal === 0 || corpus.length < authoredTotal,
+    'allowlist is selective',
+    corpus.length === authoredTotal && authoredTotal > 0 ? 'every authored note is tagged — is that deliberate?' : '',
+  )
   // The server filter is the thing keeping machine rows out; if it was silently
   // ignored we are scanning — and about to publish — the wrong set entirely.
   record(body.authored !== undefined, 'server applied ?authored', body.authored === undefined ? 'echo absent — backend predates the filter' : 'echo present')
@@ -113,6 +136,50 @@ for (const [label, re] of SECRET_PATTERNS) {
       ? 'none'
       : hits.map((o) => `${o.id.slice(0, 8)}… (${locate(o.content, re)})`).join(', '),
   )
+}
+
+// ── 2b. publish-intent review ──────────────────────────────────────────────────
+// A different kind of check from the sweep above. Those patterns match things that
+// are unsafe by their nature — a key is a key. These match a document's SHAPE, to
+// surface notes written as private working material even though nothing in them is
+// secret: interview rehearsal, self-coaching, candid self-assessment.
+//
+// The case that motivated it read as ordinary professional content — topics
+// "debugging, open source, self-assessment", no PII, no secrets, no private repo —
+// yet it was prepared interview answers annotated with "Strong signal for: …" and an
+// "Honest gap: …" admission. Every mechanical check passed it.
+//
+// Deliberately narrow. A broad pass over this corpus is useless: matching /recruiter/
+// returned 14 hits of which ~13 were false, because a portfolio *about* fixing hiring
+// legitimately discusses recruiters. So these key on authoring conventions and
+// coaching annotations, not on subject matter.
+//
+// Reported, never failed. Intent is not machine-decidable — this can nominate a note
+// for a human decision, and that is the whole of its job. The durable control is
+// deciding at capture time (resume-agent#233), not filtering at publish time.
+const INTENT_MARKERS = [
+  ['interview rehearsal', /^\s*INTERVIEW PREP\b|\bA-GROUND\b/im],
+  ['coaching annotation', /\bStrong signal for:|\bHonest gap:/i],
+  ['rehearsed Q&A pairs', /\bQ:\s*["“][\s\S]{0,400}?\bA[-:]/],
+]
+section('publish-intent review')
+{
+  const flagged = new Map()
+  for (const [label, re] of INTENT_MARKERS) {
+    for (const o of corpus.filter((x) => re.test(x.content ?? ''))) {
+      const prev = flagged.get(o.id) ?? []
+      flagged.set(o.id, [...prev, label])
+    }
+  }
+  if (flagged.size === 0) {
+    record(true, 'no notes look like private working material', 'none')
+  } else {
+    // Not a failure: needs a human read, and a false positive here is cheap.
+    console.log(`  REVIEW ${flagged.size} note(s) match a private-working-material shape:`)
+    for (const [id, labels] of flagged) console.log(`      ${id.slice(0, 8)}… — ${labels.join(', ')}`)
+    console.log('      Read each through the private MCP and decide. Mark private if it is')
+    console.log('      working material rather than something written to be read.')
+  }
 }
 
 // ── 3. private-repo mentions ───────────────────────────────────────────────────

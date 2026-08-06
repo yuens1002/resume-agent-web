@@ -69,6 +69,32 @@ export interface PublicObservation {
  */
 const OBSERVATIONS_QUERY = '?authored=1&limit=500'
 
+/**
+ * A note is published as a page only if it carries this topic. **Allowlist, and the
+ * whole point of it.**
+ *
+ * `authored: true` answers "did a human write this". It does not answer "was this
+ * written to be read by a stranger", and nothing upstream does. Four distinct
+ * categories of not-for-publication material have surfaced in this corpus — a
+ * credential, submitted job-description text, internals of a private repo, and
+ * interview rehearsal notes annotated with self-coaching — each found by a different
+ * method, none by the one that caught the previous. Filtering them out afterwards is
+ * a denylist, and a denylist fails open: it can only exclude the categories someone
+ * has already thought of.
+ *
+ * So selection is inverted, the same way resume-agent#222 inverted classification and
+ * resume-agent#233 proposes inverting visibility. An untagged note is unpublished by
+ * construction rather than by anyone recognising what is wrong with it, and every
+ * published word has been read by a human who chose to publish it.
+ *
+ * Tag a note by adding this topic through the private MCP. Configurable so a fork can
+ * pick its own convention.
+ */
+const PUBLISH_TAG = (process.env.OBSERVATION_PUBLISH_TAG ?? 'publish').toLowerCase()
+
+const isPublishable = (o: PublicObservation): boolean =>
+  (o.topics ?? []).some((t) => t.toLowerCase() === PUBLISH_TAG)
+
 let cachedObs: PublicObservation[] = []
 
 /** Fetch /observations into the in-memory cache; keep last-known on failure. */
@@ -102,11 +128,24 @@ export async function refreshObservations(): Promise<void> {
       console.warn(`[machine] /observations truncated: showing ${body.observations.length} of ${body.total} — raise the limit`)
     }
 
-    // Belt-and-braces: a no-op when the server filtered, and on an older backend it drops
-    // any entry explicitly flagged machine while still passing rows that carry no flag at
-    // all (degraded but not empty). No content-length floor — with a real signal, a floor
-    // only silently drops short authored notes.
-    cachedObs = body.observations.filter((o) => o.authored !== false)
+    // Two filters, in order of how much they can be trusted.
+    //
+    // 1. `authored !== false` — belt-and-braces against the server's own filter. A no-op
+    //    when it applied; on an older backend it still drops anything explicitly flagged
+    //    machine. No content-length floor: with a real signal, a floor only silently
+    //    drops short authored notes.
+    // 2. `isPublishable` — the allowlist. This is the one that decides what the site
+    //    publishes, and it is deliberately applied here at the cache boundary rather than
+    //    per-route, so the index, the detail pages and the sitemap cannot disagree about
+    //    what is public. A new route added later inherits it without knowing it exists.
+    const authored = body.observations.filter((o) => o.authored !== false)
+    cachedObs = authored.filter(isPublishable)
+    if (authored.length && cachedObs.length === 0) {
+      console.warn(
+        `[machine] no observation carries the "${PUBLISH_TAG}" topic — ${authored.length} authored notes, 0 published. ` +
+          `Tag notes via the private MCP to publish them.`,
+      )
+    }
   } catch (err) {
     console.warn('[machine] /observations fetch failed:', err instanceof Error ? err.message : err)
   }

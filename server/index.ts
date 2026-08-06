@@ -197,6 +197,11 @@ app.get('/observations', async (c) => {
   const d = await staticPageDeps()
   if (!d.ok) return c.text(d.error, d.status)
   const obs = getObservations()
+  // Nothing tagged for publication means this index has no content to be. Serving a
+  // 200 "none yet" page would be a thin page — and this URL is already in the live
+  // sitemap, so a 404 is the signal that actually gets it dropped rather than kept
+  // and rated. It returns as soon as a note is tagged.
+  if (obs.length === 0) return c.text('Not found', 404)
   return c.html(renderStaticPage(d.base, observationsIndexMeta(d.p, obs), buildObservationsIndex(d.p, obs)))
 })
 
@@ -236,7 +241,7 @@ serve({ fetch: app.fetch, port: PORT }, () => {
   const obs = getObservations()
   console.log(`[machine] profile cache: ${getProfile() ? 'loaded' : 'EMPTY'} · /robots.txt /llms.txt + JSON-LD/noscript active`)
   console.log(
-    `[machine] observations: ${obs.length} authored (${obs.filter(hasDetailPage).length} with pages) · ` +
+    `[machine] observations: ${obs.length} published (${obs.filter(hasDetailPage).length} with pages) · ` +
       `/sitemap.xml /projects/:slug /observations/:id serving real pages`,
   )
   if (!RESUME_AGENT_API_KEY) console.warn('[warn] RESUME_AGENT_API_KEY is unset — /api/resume will fail against a key-gated backend.')
