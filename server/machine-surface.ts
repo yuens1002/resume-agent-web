@@ -485,14 +485,17 @@ export function projectPageHead(pr: BackendProject, p: PublicProfile): string {
   return projectJsonLd(pr, p)
 }
 
-// ── /observations (index only — per-observation pages wait on the backend filter) ──
+// ── /observations — index + per-note pages, both gated by the publish allowlist ──
 export function observationsIndexMeta(p: PublicProfile, obs: PublicObservation[] = []): PageMeta {
   const name = p.contact?.name ?? 'the candidate'
   const n = obs.length
+  // Singular matters here: this string is the SERP snippet, and "1 dated, public
+  // reasoning notes" reads as a bug to anyone who sees it.
+  const lede = n === 1 ? 'One dated, public reasoning note' : n ? `${n} dated, public reasoning notes` : 'Dated, public reasoning notes'
   return {
     title: `Observations — ${name}`,
     description: clamp(
-      `${n ? `${n} dated` : 'Dated'}, public reasoning notes by ${name} — the "why" behind the projects, captured as work happened and citable by URL.`,
+      `${lede} by ${name} — the "why" behind the projects, captured as work happened and citable by URL.`,
     ),
     path: '/observations',
   }

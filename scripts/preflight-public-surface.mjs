@@ -120,7 +120,16 @@ try {
   // The server filter is the thing keeping machine rows out; if it was silently
   // ignored we are scanning — and about to publish — the wrong set entirely.
   record(body.authored !== undefined, 'server applied ?authored', body.authored === undefined ? 'echo absent — backend predates the filter' : 'echo present')
-  record(!body.truncated, 'corpus not truncated', body.truncated ? `showing ${corpus.length} of ${body.total} — raise the limit` : `${body.total} total`)
+  // Report the AUTHORED counts, not the published ones. Truncation happens upstream of
+  // the allowlist, so `corpus.length` here would understate what was dropped — "showing
+  // 3 of 158" when 3 is simply how many are tagged.
+  record(
+    !body.truncated,
+    'corpus not truncated',
+    body.truncated
+      ? `API returned ${authoredTotal} of ${body.total} authored notes — raise the limit`
+      : `${body.total} authored total`,
+  )
 } catch (e) {
   record(false, 'fetch authored corpus', e.message)
 }

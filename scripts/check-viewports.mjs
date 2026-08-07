@@ -22,7 +22,10 @@ const SIZES = [
 // width takes minutes. Sample instead: templates repeat, so a handful of instances of each
 // shape is what's informative. Sampling is deterministic — evenly spaced, always including
 // the first and last of a group — so a failure is reproducible rather than luck.
-const MAX_PER_SHAPE = Number(process.env.CHECK_SAMPLE ?? 4)
+// Clamped to >= 2: the even-spacing step below divides by (MAX_PER_SHAPE - 1), so 1 —
+// or a non-numeric CHECK_SAMPLE — would divide by zero and put `undefined` in the
+// route list, which fails as a confusing navigation error rather than a bad config.
+const MAX_PER_SHAPE = Math.max(2, Math.trunc(Number(process.env.CHECK_SAMPLE)) || 4)
 
 /** Collapse a path to its route template, so instances of one page shape group together. */
 const shapeOf = (p) => p.replace(/\/(projects|observations)\/[^/]+$/, '/$1/:id')
