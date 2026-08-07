@@ -1,7 +1,7 @@
 {
   "name": "resume-agent-web",
   "private": true,
-  "version": "1.0.26",
+  "version": "1.0.27",
   "type": "module",
   "engines": {
     "node": ">=20"
@@ -13,7 +13,9 @@
     "build": "vite build",
     "start": "tsx server/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preflight": "node scripts/preflight-public-surface.mjs",
+    "check:viewports": "node scripts/check-viewports.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",

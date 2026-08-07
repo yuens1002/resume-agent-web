@@ -8,7 +8,6 @@ import {
   getProfile,
   refreshObservations,
   getObservations,
-  isAuthoredObservation,
   buildHeadInjection,
   buildNoscript,
   buildLlmsTxt,
@@ -16,10 +15,15 @@ import {
   buildProjectsIndex,
   buildProjectPage,
   buildObservationsIndex,
+  buildObservationPage,
   projectsIndexMeta,
   projectPageMeta,
   projectPageHead,
   observationsIndexMeta,
+  observationPageMeta,
+  observationTitles,
+  observationPageHead,
+  hasDetailPage,
   renderShell,
   renderStaticPage,
   metaDescription,
@@ -155,7 +159,7 @@ app.get('/', async (c) => {
  * here — so a fork publishes its own pages automatically.
  */
 app.get('/sitemap.xml', (c) => {
-  const xml = buildSitemap(getProfile(), getObservations().filter(isAuthoredObservation))
+  const xml = buildSitemap(getProfile(), getObservations())
   return c.body(xml, 200, { 'Content-Type': 'application/xml; charset=UTF-8' })
 })
 
@@ -189,13 +193,31 @@ app.get('/projects/:slug', async (c) => {
   )
 })
 
-// Index only. Per-observation pages wait on a backend filter for machine-generated
-// sync entries (resume-agent#222) — publishing those as pages would be thin content.
 app.get('/observations', async (c) => {
   const d = await staticPageDeps()
   if (!d.ok) return c.text(d.error, d.status)
-  const obs = getObservations().filter(isAuthoredObservation)
-  return c.html(renderStaticPage(d.base, observationsIndexMeta(d.p), buildObservationsIndex(d.p, obs)))
+  const obs = getObservations()
+  // Nothing tagged for publication means this index has no content to be. Serving a
+  // 200 "none yet" page would be a thin page — and this URL is already in the live
+  // sitemap, so a 404 is the signal that actually gets it dropped rather than kept
+  // and rated. It returns as soon as a note is tagged.
+  if (obs.length === 0) return c.text('Not found', 404)
+  return c.html(renderStaticPage(d.base, observationsIndexMeta(d.p, obs), buildObservationsIndex(d.p, obs)))
+})
+
+app.get('/observations/:id', async (c) => {
+  const d = await staticPageDeps()
+  if (!d.ok) return c.text(d.error, d.status)
+  const obs = getObservations()
+  const o = obs.find((x) => x.id === c.req.param('id'))
+  // Unknown id, or a note short enough to live inline on the index, has no page here.
+  if (!o || !hasDetailPage(o)) return c.text('Not found', 404)
+  // Titles are resolved against the whole corpus so two notes from one session
+  // can't ship the same <title> — see observationTitles.
+  const title = observationTitles(obs.filter(hasDetailPage)).get(o.id)
+  return c.html(
+    renderStaticPage(d.base, observationPageMeta(o, title), buildObservationPage(o, d.p), observationPageHead(o, d.p)),
+  )
 })
 
 // Real static assets (hashed bundles, favicons) straight from disk.
@@ -219,8 +241,8 @@ serve({ fetch: app.fetch, port: PORT }, () => {
   const obs = getObservations()
   console.log(`[machine] profile cache: ${getProfile() ? 'loaded' : 'EMPTY'} · /robots.txt /llms.txt + JSON-LD/noscript active`)
   console.log(
-    `[machine] observations: ${obs.filter(isAuthoredObservation).length}/${obs.length} authored · ` +
-      `/sitemap.xml /projects /projects/:slug /observations serving real pages`,
+    `[machine] observations: ${obs.length} published (${obs.filter(hasDetailPage).length} with pages) · ` +
+      `/sitemap.xml /projects/:slug /observations/:id serving real pages`,
   )
   if (!RESUME_AGENT_API_KEY) console.warn('[warn] RESUME_AGENT_API_KEY is unset — /api/resume will fail against a key-gated backend.')
 })

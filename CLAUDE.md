@@ -42,6 +42,37 @@ Single-page "live résumé" SPA for Sunny Yuen. Product + architecture detail is
 - Set on the `web` Railway service (the only cloud env). Never commit secrets; the
   client bundle must never contain the key.
 
+## Publishing rule — the sitemap is an allowlist, never a filtered corpus
+
+**Only an observation carrying the `publish` topic gets rendered as a page or listed in
+`/sitemap.xml`.** Untagged means no URL: `/observations/:id` returns `404`, and with nothing
+tagged `/observations` returns `404` too rather than a thin "none yet" page.
+
+Do not weaken this into "publish everything except X." That was the original design and it
+failed four times, each time on a category the previous filter had no reason to look for:
+a live credential, submitted job-description text, internals of a private repo, and interview
+rehearsal notes annotated with self-coaching. Three of the four were found by an audit *after*
+the checks of the day passed. `authored: true` means a human wrote it, not that it was written
+to be read — nothing upstream carries that second signal, so it has to be supplied deliberately.
+
+Practical consequences:
+
+- **Publishing is an explicit act.** Tag through the private MCP; the page appears on the next
+  10-min refresh. Never tag on someone's behalf — the allowlist is only worth having because a
+  human read the thing and chose to publish it.
+- **The filter lives at the cache boundary** (`refreshObservations` in `server/machine-surface.ts`),
+  not per-route, so the index, detail pages and sitemap cannot disagree. A new route inherits it
+  without knowing it exists. Keep it there.
+- **`npm run preflight` before shipping any public-URL change**, and again immediately before
+  merge — the corpus moves underneath the branch. It fails if the allowlist ever matches the
+  whole corpus, which would mean it has quietly become a denylist again.
+- **The preflight prints and never writes.** It reads the entire public corpus; a report file is
+  the leak. Findings give a match's type and location, never its value.
+- A mechanical sweep catches shapes, never intent. It can nominate a note for review; it cannot
+  make the publish decision. Treat a green preflight as "no known-bad shapes," not "safe to ship."
+
+Tag name is configurable via `OBSERVATION_PUBLISH_TAG` (default `publish`).
+
 ## Conventions
 
 - **Design system:** `src/styles.css` — ported tokens + the `.richtext` prose scope.

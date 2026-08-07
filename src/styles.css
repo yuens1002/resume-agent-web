@@ -49,7 +49,7 @@ a { color: inherit; }
 /* UI chrome renders as <button> in the SPA and as <a> on the server-rendered pages —
    these are affordances, never prose, so they never carry an underline either way.
    (.richtext a keeps its underline; prose links are the exception, not these.) */
-.hdr-name, .prow, .chip, .btn, .badge { text-decoration: none; }
+.hdr-name, .prow, .chip, .btn, .badge, .obslink { text-decoration: none; }
 a.chip, a.badge { display: inline-block; }
 
 /* paper grain — very subtle warmth */
@@ -524,19 +524,25 @@ body.voice-sans .prose.small { font-size: 16px; }
   width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
 }
 
-/* observations index (server-rendered /observations) — collapsed long-form notes */
-.obslist { list-style: none; padding: 0; margin: 24px 0 0; }
-.obsrow { border-top: 1px solid var(--hair); padding: 14px 0; }
-.obsrow summary {
-  cursor: pointer; display: flex; flex-wrap: wrap; gap: 9px; align-items: center;
-  list-style: none;
+/* observations (server-rendered /observations + /observations/:id) */
+.obsmonth {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-soft); margin: 30px 0 0; padding-bottom: 8px; border-bottom: 1px solid var(--hair);
 }
-.obsrow summary::-webkit-details-marker { display: none; }
-.obs-excerpt { flex: 1 1 100%; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
-.obsrow summary:hover .obs-excerpt { color: var(--accent-ink); }
-.obsrow details[open] .obs-excerpt { display: none; }
+.obslist { list-style: none; padding: 0; margin: 0; }
+.obsrow { border-bottom: 1px solid var(--hair); }
+.obsrow-meta { display: flex; gap: 9px; align-items: center; }
+.obslink, .obsrow > .obsrow-meta { display: block; padding: 14px 0; transition: padding .14s; }
+.obslink:hover { padding-left: 10px; }
+.obslink:hover .obs-excerpt { color: var(--accent-ink); }
+.obs-excerpt {
+  display: block; margin: 7px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-2);
+  overflow-wrap: anywhere; transition: color .14s;
+}
+/* Short notes render inline on the index — no link, so no hover affordance. */
+.obsrow > .obs-excerpt { padding-bottom: 14px; }
 .obs-body {
-  margin: 12px 0 12px; font-size: 15.5px; line-height: 1.65; color: var(--ink-2);
+  font-size: 16px; line-height: 1.7; color: var(--ink-2);
   white-space: pre-wrap; overflow-wrap: anywhere;
 }
 

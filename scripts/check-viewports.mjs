@@ -18,6 +18,37 @@ const SIZES = [
   { label: '1280', width: 1280, height: 900 },
 ]
 
+// The sitemap grows with the data (166 URLs and counting), so checking every one at every
+// width takes minutes. Sample instead: templates repeat, so a handful of instances of each
+// shape is what's informative. Sampling is deterministic — evenly spaced, always including
+// the first and last of a group — so a failure is reproducible rather than luck.
+// Clamped to >= 2: the even-spacing step below divides by (MAX_PER_SHAPE - 1), so 1 —
+// or a non-numeric CHECK_SAMPLE — would divide by zero and put `undefined` in the
+// route list, which fails as a confusing navigation error rather than a bad config.
+const MAX_PER_SHAPE = Math.max(2, Math.trunc(Number(process.env.CHECK_SAMPLE)) || 4)
+
+/** Collapse a path to its route template, so instances of one page shape group together. */
+const shapeOf = (p) => p.replace(/\/(projects|observations)\/[^/]+$/, '/$1/:id')
+
+function sample(paths) {
+  const byShape = new Map()
+  for (const p of paths) {
+    const k = shapeOf(p)
+    if (!byShape.has(k)) byShape.set(k, [])
+    byShape.get(k).push(p)
+  }
+  const out = []
+  for (const group of byShape.values()) {
+    if (group.length <= MAX_PER_SHAPE) {
+      out.push(...group)
+      continue
+    }
+    const step = (group.length - 1) / (MAX_PER_SHAPE - 1)
+    for (let i = 0; i < MAX_PER_SHAPE; i++) out.push(group[Math.round(i * step)])
+  }
+  return out
+}
+
 /** Route list from the live sitemap (falls back to "/" if it can't be read). */
 async function routes() {
   try {
@@ -27,7 +58,12 @@ async function routes() {
     const paths = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)]
       .map((m) => new URL(m[1]).pathname)
       .map((p) => (p === '' ? '/' : p))
-    return [...new Set(paths)]
+    const unique = [...new Set(paths)]
+    const picked = sample(unique)
+    if (picked.length < unique.length) {
+      console.log(`sitemap has ${unique.length} URLs — checking ${picked.length} (≤${MAX_PER_SHAPE} per route shape; CHECK_SAMPLE to change)\n`)
+    }
+    return picked
   } catch (e) {
     console.warn(`[warn] could not read sitemap (${e instanceof Error ? e.message : e}) — checking / only`)
     return ['/']

@@ -54,14 +54,53 @@ export interface PublicObservation {
   content: string
   /** Backend-issued citation URL (agent.yuens.me/observations/:id). */
   url: string
+  /**
+   * True for a hand-written note, false for a machine-generated sync/telemetry entry
+   * (resume-agent#222). Absent on a backend predating that field — see refreshObservations.
+   */
+  authored?: boolean
 }
+
+/**
+ * Ask for authored notes only, in one request. `authored=1` is the server-side filter
+ * (resume-agent#222); the listing default is deliberately additive, so it must be passed
+ * explicitly. `limit=500` clears the ~173 authored notes in a single call — the backend
+ * raised the ceiling for exactly this consumer, since there is no browsing UI to paginate.
+ */
+const OBSERVATIONS_QUERY = '?authored=1&limit=500'
+
+/**
+ * A note is published as a page only if it carries this topic. **Allowlist, and the
+ * whole point of it.**
+ *
+ * `authored: true` answers "did a human write this". It does not answer "was this
+ * written to be read by a stranger", and nothing upstream does. Four distinct
+ * categories of not-for-publication material have surfaced in this corpus — a
+ * credential, submitted job-description text, internals of a private repo, and
+ * interview rehearsal notes annotated with self-coaching — each found by a different
+ * method, none by the one that caught the previous. Filtering them out afterwards is
+ * a denylist, and a denylist fails open: it can only exclude the categories someone
+ * has already thought of.
+ *
+ * So selection is inverted, the same way resume-agent#222 inverted classification and
+ * resume-agent#233 proposes inverting visibility. An untagged note is unpublished by
+ * construction rather than by anyone recognising what is wrong with it, and every
+ * published word has been read by a human who chose to publish it.
+ *
+ * Tag a note by adding this topic through the private MCP. Configurable so a fork can
+ * pick its own convention.
+ */
+const PUBLISH_TAG = (process.env.OBSERVATION_PUBLISH_TAG ?? 'publish').toLowerCase()
+
+const isPublishable = (o: PublicObservation): boolean =>
+  (o.topics ?? []).some((t) => t.toLowerCase() === PUBLISH_TAG)
 
 let cachedObs: PublicObservation[] = []
 
 /** Fetch /observations into the in-memory cache; keep last-known on failure. */
 export async function refreshObservations(): Promise<void> {
   try {
-    const res = await fetch(`${RESUME_API_BASE}/observations`, {
+    const res = await fetch(`${RESUME_API_BASE}/observations${OBSERVATIONS_QUERY}`, {
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(5000),
     })
@@ -69,8 +108,44 @@ export async function refreshObservations(): Promise<void> {
       console.warn('[machine] /observations responded', res.status)
       return
     }
-    const body = (await res.json()) as { observations?: PublicObservation[] }
-    if (Array.isArray(body.observations)) cachedObs = body.observations
+    const body = (await res.json()) as {
+      observations?: PublicObservation[]
+      authored?: boolean
+      total?: number
+      truncated?: boolean
+    }
+    if (!Array.isArray(body.observations)) return
+
+    // Capability probe. An unknown query param on this endpoint is silently ignored and
+    // still returns 200 with plausible JSON, so a 200 alone does not mean the filter was
+    // applied. The envelope echoes `authored` only when the server understood it, and the
+    // key is absent on any deployment predating resume-agent#222 — which is what a fork
+    // pointed at an older backend would hit.
+    if (body.authored === undefined) {
+      console.warn('[machine] /observations ignored ?authored — backend predates resume-agent#222; filtering client-side')
+    }
+    if (body.truncated) {
+      console.warn(`[machine] /observations truncated: showing ${body.observations.length} of ${body.total} — raise the limit`)
+    }
+
+    // Two filters, in order of how much they can be trusted.
+    //
+    // 1. `authored !== false` — belt-and-braces against the server's own filter. A no-op
+    //    when it applied; on an older backend it still drops anything explicitly flagged
+    //    machine. No content-length floor: with a real signal, a floor only silently
+    //    drops short authored notes.
+    // 2. `isPublishable` — the allowlist. This is the one that decides what the site
+    //    publishes, and it is deliberately applied here at the cache boundary rather than
+    //    per-route, so the index, the detail pages and the sitemap cannot disagree about
+    //    what is public. A new route added later inherits it without knowing it exists.
+    const authored = body.observations.filter((o) => o.authored !== false)
+    cachedObs = authored.filter(isPublishable)
+    if (authored.length && cachedObs.length === 0) {
+      console.warn(
+        `[machine] no observation carries the "${PUBLISH_TAG}" topic — ${authored.length} authored notes, 0 published. ` +
+          `Tag notes via the private MCP to publish them.`,
+      )
+    }
   } catch (err) {
     console.warn('[machine] /observations fetch failed:', err instanceof Error ? err.message : err)
   }
@@ -80,18 +155,15 @@ export function getObservations(): PublicObservation[] {
 }
 
 /**
- * Automated sync/telemetry entries mixed into the feed alongside authored notes
- * (e.g. "VERSION DRIFT [repo]: package.json@x is ahead of CHANGELOG@y"). They are
- * type `observation` like everything else, so type filtering can't separate them.
- *
- * This is a FRONTEND-SIDE STOPGAP: publishing these as indexable pages would be thin
- * content. The durable fix is a backend flag on /observations (resume-agent#222) —
- * once that ships, delete this and filter server-side.
+ * Below this length a note has nothing more to show than its own excerpt, so it renders
+ * in full on the index and gets no page of its own. Publishing a 55-character note as a
+ * standalone URL would be thin content — and it would duplicate the index besides. This
+ * is a *presentation* threshold, not an authored/machine judgment: that call belongs to
+ * the backend's `authored` flag, and every note here is already authored.
  */
-const MACHINE_TOPICS = new Set(['version_drift', 'sync_warning'])
-export function isAuthoredObservation(o: PublicObservation): boolean {
-  if ((o.topics ?? []).some((t) => MACHINE_TOPICS.has(t))) return false
-  return (o.content ?? '').trim().length >= 120
+export const DETAIL_PAGE_MIN_CHARS = 280
+export function hasDetailPage(o: PublicObservation): boolean {
+  return (o.content ?? '').trim().length > DETAIL_PAGE_MIN_CHARS
 }
 
 // ── helpers ──
@@ -413,38 +485,71 @@ export function projectPageHead(pr: BackendProject, p: PublicProfile): string {
   return projectJsonLd(pr, p)
 }
 
-// ── /observations (index only — per-observation pages wait on the backend filter) ──
-export function observationsIndexMeta(p: PublicProfile): PageMeta {
+// ── /observations — index + per-note pages, both gated by the publish allowlist ──
+export function observationsIndexMeta(p: PublicProfile, obs: PublicObservation[] = []): PageMeta {
   const name = p.contact?.name ?? 'the candidate'
+  const n = obs.length
+  // Singular matters here: this string is the SERP snippet, and "1 dated, public
+  // reasoning notes" reads as a bug to anyone who sees it.
+  const lede = n === 1 ? 'One dated, public reasoning note' : n ? `${n} dated, public reasoning notes` : 'Dated, public reasoning notes'
   return {
     title: `Observations — ${name}`,
     description: clamp(
-      `Dated, public reasoning notes by ${name} — the "why" behind the projects, captured as work happened and citable by URL.`,
+      `${lede} by ${name} — the "why" behind the projects, captured as work happened and citable by URL.`,
     ),
     path: '/observations',
   }
 }
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+/** "2026-07-24" → "July 2026"; falls back to the raw value if it isn't a date. */
+const monthLabel = (date: string): string => {
+  const m = /^(\d{4})-(\d{2})/.exec((date ?? '').trim())
+  return m ? `${MONTHS[Number(m[2]) - 1] ?? m[2]} ${m[1]}` : (date ?? '')
+}
+
 /*
- * These notes run long — several are full essays — so the index collapses each into a
- * native <details>. The complete text stays in the markup (crawlers index content inside
- * <details>; it is only visually collapsed), which matters because this is currently the
- * only page carrying it. When per-observation pages land, swap the expander for a link to
- * /observations/:id and cut this back to the excerpt, so the full text lives in one place.
+ * An archive index: one compact row per note, grouped by month, each linking to its own
+ * page. Full text lives on the detail page rather than here, so the two don't duplicate
+ * each other — and every note stays internally linked, which a sitemap alone wouldn't
+ * achieve (sitemap-only URLs are orphans and crawl poorly). Notes too short to warrant a
+ * page (see hasDetailPage) render in full inline and link nowhere, because their excerpt
+ * already is the whole note.
  */
 export function buildObservationsIndex(p: PublicProfile, obs: PublicObservation[]): string {
-  const items = obs
+  const groups: Array<{ label: string; items: PublicObservation[] }> = []
+  for (const o of obs) {
+    const label = monthLabel(o.date)
+    const last = groups[groups.length - 1]
+    if (last?.label === label) last.items.push(o)
+    else groups.push({ label, items: [o] })
+  }
+
+  const row = (o: PublicObservation): string => {
+    const meta =
+      `<span class="prow-meta">${esc(o.date)}</span>` + `<span class="badge muted">${esc(o.type)}</span>`
+    if (!hasDetailPage(o)) {
+      return (
+        `<li class="obsrow">` +
+        `<div class="obsrow-meta">${meta}</div>` +
+        `<p class="obs-excerpt">${esc(o.content.trim())}</p>` +
+        `</li>`
+      )
+    }
+    return (
+      `<li class="obsrow">` +
+      `<a class="obslink" href="/observations/${esc(o.id)}">` +
+      `<span class="obsrow-meta">${meta}</span>` +
+      `<span class="obs-excerpt">${esc(clamp(o.content, 200))}</span>` +
+      `</a></li>`
+    )
+  }
+
+  const body = groups
     .map(
-      (o) =>
-        `<li class="obsrow"><details>` +
-        `<summary>` +
-        `<span class="prow-meta">${esc(o.date)}</span>` +
-        `<span class="badge muted">${esc(o.type)}</span>` +
-        `<span class="obs-excerpt">${esc(clamp(o.content, 150))}</span>` +
-        `</summary>` +
-        `<p class="obs-body">${esc(o.content)}</p>` +
-        `<div class="techrow">${(o.topics ?? []).map((t) => `<span class="tech">${esc(t)}</span>`).join('')}</div>` +
-        `</details></li>`,
+      (g) =>
+        `<h2 class="obsmonth">${esc(g.label)}</h2>` +
+        `<ul class="obslist">${g.items.map(row).join('')}</ul>`,
     )
     .join('')
 
@@ -453,13 +558,107 @@ export function buildObservationsIndex(p: PublicProfile, obs: PublicObservation[
     `${eyebrow('/observations')}` +
     `<h1 class="feat-title" style="font-size:34px;margin-bottom:10px">Observations</h1>` +
     `<p class="feat-tag" style="max-width:60ch;margin-bottom:8px">` +
-    `Dated notes captured while the work happened — the reasoning trail behind the projects. ` +
-    `Each one is also available as JSON from <a href="${RESUME_API_BASE}/observations">the agent API</a>.` +
+    `${obs.length} dated notes captured while the work happened — the reasoning trail behind the projects. ` +
+    `Also available as JSON from <a href="${RESUME_API_BASE}/observations">the agent API</a>.` +
     `</p>` +
-    (items
-      ? `<ul class="obslist">${items}</ul>`
-      : `<p class="feat-tag" style="margin-top:24px">No observations published yet.</p>`) +
+    (body || `<p class="feat-tag" style="margin-top:24px">No observations published yet.</p>`) +
     askCta('Ask the agent about any of this →') +
+    `</main></div>`
+  )
+}
+
+// ── /observations/:id ──
+const observationKind = (type: string): string =>
+  type === 'idea' ? 'Idea' : type === 'task' ? 'Task' : 'Observation'
+
+const baseObservationTitle = (o: PublicObservation): string =>
+  `${clamp(o.content, 60)} — ${observationKind(o.type)}, ${o.date}`
+
+/**
+ * Page titles for the whole corpus, disambiguated against each other.
+ *
+ * Two notes captured in one session can share a long opening *and* a date, so the
+ * naive title collides. Lengthening the excerpt does not fix it — measured against
+ * the live corpus, collisions survive to 140 characters while the title becomes
+ * unusable in a SERP. Duplicate titles are a real ranking problem, so where a
+ * collision exists the first topic that actually distinguishes the note is appended
+ * — a genuine difference taken from the data, rather than an opaque id suffix.
+ *
+ * Needs the whole set, which is why it can't live in observationPageMeta.
+ */
+export function observationTitles(obs: PublicObservation[]): Map<string, string> {
+  const groups = new Map<string, PublicObservation[]>()
+  for (const o of obs) {
+    const base = baseObservationTitle(o)
+    const g = groups.get(base)
+    if (g) g.push(o)
+    else groups.set(base, [o])
+  }
+
+  const titles = new Map<string, string>()
+  for (const [base, members] of groups) {
+    if (members.length === 1) {
+      titles.set(members[0].id, base)
+      continue
+    }
+    for (const o of members) {
+      const others = members.filter((m) => m.id !== o.id)
+      const distinctive = (o.topics ?? []).find(
+        (t) => !others.some((m) => (m.topics ?? []).some((x) => x.toLowerCase() === t.toLowerCase())),
+      )
+      // Fall back to a short id only when topics genuinely cannot separate them —
+      // ugly, but a unique title beats a duplicate one.
+      titles.set(o.id, `${base} · ${distinctive ?? o.id.slice(0, 6)}`)
+    }
+  }
+  return titles
+}
+
+export function observationPageMeta(o: PublicObservation, title?: string): PageMeta {
+  return {
+    title: title ?? baseObservationTitle(o),
+    description: clamp(o.content),
+    path: `/observations/${o.id}`,
+    type: 'article',
+  }
+}
+
+/** JSON-LD for one note (schema.org BlogPosting — a dated, authored piece of writing). */
+function observationJsonLd(o: PublicObservation, p: PublicProfile): string {
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: clamp(o.content, 110),
+    articleBody: o.content,
+    datePublished: o.captured_at ?? o.date,
+    url: `${SITE_URL}/observations/${o.id}`,
+    ...(o.topics?.length ? { keywords: o.topics.join(', ') } : {}),
+    author: { '@type': 'Person', name: p.contact?.name, url: SITE_URL },
+  }
+  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`
+}
+
+export function observationPageHead(o: PublicObservation, p: PublicProfile): string {
+  return observationJsonLd(o, p)
+}
+
+export function buildObservationPage(o: PublicObservation, p: PublicProfile): string {
+  return (
+    `<div class="app">${masthead(p)}<main style="padding-bottom:60px">` +
+    `${eyebrow('/observations')}` +
+    `<div class="obsrow-meta" style="margin-bottom:14px">` +
+    `<span class="prow-meta">${esc(o.date)}</span>` +
+    `<span class="badge muted">${esc(o.type)}</span>` +
+    `</div>` +
+    `<article class="obs-body" style="margin:0 0 22px">${esc(o.content.trim())}</article>` +
+    ((o.topics ?? []).length
+      ? `<div class="techrow">${o.topics.map((t) => `<span class="tech">${esc(t)}</span>`).join('')}</div>`
+      : '') +
+    `<p style="margin:26px 0 0"><a class="chip" href="/observations">← All observations</a></p>` +
+    // The backend URL is this note's canonical citation id, kept visible so the page is
+    // usable as a reference the way the evidence graph intends.
+    `<p class="prow-meta" style="margin:18px 0 0">Cite: <a href="${esc(o.url)}">${esc(o.url)}</a></p>` +
+    askCta('Ask the agent about this →') +
     `</main></div>`
   )
 }
@@ -479,11 +678,17 @@ export function buildSitemap(p: PublicProfile | null, obs: PublicObservation[]):
       urls.push({ loc: `${SITE_URL}/projects/${pr.slug}`, lastmod: profileDay, priority: '0.7' })
     }
   }
-  // Per-observation pages are not published yet (see isAuthoredObservation), so the index
-  // is the only observation URL that belongs in the sitemap. It is gated on the profile
-  // too: the page renders the profile masthead, so with an empty profile cache the route
-  // answers 503 — advertising it in that state would point crawlers at a dead URL.
-  if (p && obs.length) urls.push({ loc: `${SITE_URL}/observations`, lastmod: newestObs, priority: '0.6' })
+  // Gated on the profile too: these pages render the profile masthead, so with an empty
+  // profile cache the routes answer 503 — advertising them in that state would point
+  // crawlers at dead URLs.
+  if (p && obs.length) {
+    urls.push({ loc: `${SITE_URL}/observations`, lastmod: newestObs, priority: '0.6' })
+    // Only notes that actually have a page. The short ones render inline on the index
+    // and have no URL of their own (see hasDetailPage).
+    for (const o of obs.filter(hasDetailPage)) {
+      urls.push({ loc: `${SITE_URL}/observations/${o.id}`, lastmod: day(o.date), priority: '0.5' })
+    }
+  }
 
   const body = urls
     .map(
