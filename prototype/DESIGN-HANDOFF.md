@@ -149,7 +149,9 @@ conversation thread. Overlays (project detail, résumé doc, agent menu) layer o
   - **Fit gauge** (108px ring, animated) showing the score as a %.
   - **Verdict line** with `recommended_action` label (apply / apply-with-tailoring /
     pass) + one-sentence honest verdict.
-  - **Weighted score bars**: Skills 50% · Experience 30% · Domain 20%.
+  - **Score bars per category**: dynamic — one bar per category present in the
+    response (skill / experience / domain), captioned as `matched/total` qualities
+    rather than a fixed weight.
   - **Matched** (green ✓) vs **To tailor** (amber ○) columns.
 - **Résumé generation** (only when action ≠ "pass"; a "pass" shows a book-a-call
   nudge instead) — a 4-stage state machine in one CTA zone:
@@ -217,8 +219,12 @@ Endpoints the UI consumes (already implemented unless noted):
   available, else keep the UI's source-pill treatment minimal.
 - **`POST /match`** `{ job_description }` → `MatchResponse`
   `{ fit_score (0–1), matched[], gaps[], verdict, recommended_action:
-  'apply'|'apply-with-tailoring'|'pass', scoring:{ skills, experience, domain } }`.
-  Render gauge as `Math.round(fit_score*100)`; bars from `scoring.*.score`.
+  'apply'|'apply-with-tailoring'|'pass', scoring:{ required_qualities[], scored_qualities[] } }`,
+  where each quality has `{ name, category: 'skill'|'experience'|'domain', jd_importance }`
+  and scored items add `{ verdict: 'matched'|'partial'|'missing', evidence_grade:
+  'verified'|'claimed'|'absent' }`. No fixed weighting. Render gauge as
+  `Math.round(fit_score*100)`; bars are computed client-side by grouping
+  `scored_qualities` by category and showing `matched/total` per category.
 - **`POST /resume`** `{ job_description, framing_hints? }` — **SSE stream**; the final
   `data:` event is a `ResumeResponse` `{ contact, summary, skills[], employment[],
   education[], projects[] }` plus `_rubric`. **Note: this route is auth-gated**
