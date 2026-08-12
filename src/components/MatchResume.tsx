@@ -78,7 +78,9 @@ const CATEGORY_LABEL: Record<string, string> = { skill: 'Skills', experience: 'E
 function categoryBreakdown(qualities: MatchScoredQuality[]) {
   const byCategory = new Map<string, MatchScoredQuality[]>()
   for (const q of qualities) {
-    byCategory.set(q.category, [...(byCategory.get(q.category) ?? []), q])
+    const items = byCategory.get(q.category)
+    if (items) items.push(q)
+    else byCategory.set(q.category, [q])
   }
   const rest = [...byCategory.keys()].filter((c) => !CATEGORY_ORDER.includes(c as MatchQualityCategory))
   const ordered = [...CATEGORY_ORDER.filter((c) => byCategory.has(c)), ...rest]
