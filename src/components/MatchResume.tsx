@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { match as matchApi, generateResume, ApiError } from '../lib/api.ts'
 import { useProfile } from '../lib/profile-context.ts'
-import type { MatchResponse } from '../lib/types.ts'
+import type { MatchQualityCategory, MatchResponse, MatchScoredQuality } from '../lib/types.ts'
 import { buildResumeHTML, LOADING_HTML, ERROR_HTML } from '../lib/resumeDoc.ts'
 import { Btn, Card, Gauge, ScoreBar } from './ui.tsx'
 
@@ -68,6 +68,31 @@ const ACTION_LABEL: Record<MatchResponse['recommended_action'], string> = {
 function titleFromJD(jd: string): string {
   const first = jd.split('\n')[0] ?? ''
   return first.split(/\s[—–-]\s|[.,]/)[0].trim().slice(0, 52) || 'this role'
+}
+
+// No fixed weighting on the backend anymore — group whatever categories the JD
+// actually raised and show a matched/total count per category instead of a %.
+const CATEGORY_ORDER: MatchQualityCategory[] = ['skill', 'experience', 'domain']
+const CATEGORY_LABEL: Record<string, string> = { skill: 'Skills', experience: 'Experience', domain: 'Domain' }
+
+function categoryBreakdown(qualities: MatchScoredQuality[]) {
+  const byCategory = new Map<string, MatchScoredQuality[]>()
+  for (const q of qualities) {
+    byCategory.set(q.category, [...(byCategory.get(q.category) ?? []), q])
+  }
+  const rest = [...byCategory.keys()].filter((c) => !CATEGORY_ORDER.includes(c as MatchQualityCategory))
+  const ordered = [...CATEGORY_ORDER.filter((c) => byCategory.has(c)), ...rest]
+  return ordered.map((category) => {
+    const items = byCategory.get(category)!
+    const matched = items.filter((q) => q.verdict === 'matched').length
+    return {
+      category,
+      label: CATEGORY_LABEL[category] ?? category[0].toUpperCase() + category.slice(1),
+      matched,
+      total: items.length,
+      score: matched / items.length,
+    }
+  })
 }
 
 export function MatchResume() {
@@ -141,7 +166,7 @@ export function MatchResume() {
     <Card pad className="fit">
       <textarea
         ref={taRef}
-        placeholder="Paste a job description — I'll score the fit honestly (weighted 50% skills · 30% experience · 20% domain)…"
+        placeholder="Paste a job description — I'll score the fit honestly against the role's skills, experience, and domain requirements…"
         value={jd}
         onChange={(e) => setJd(e.target.value)}
       />
@@ -170,11 +195,13 @@ export function MatchResume() {
             </div>
           </div>
 
-          <div className="score-bars">
-            <ScoreBar label="Skills" weight="50%" score={result.scoring.skills.score} />
-            <ScoreBar label="Experience" weight="30%" score={result.scoring.experience.score} />
-            <ScoreBar label="Domain" weight="20%" score={result.scoring.domain.score} />
-          </div>
+          {result.scoring.scored_qualities.length > 0 && (
+            <div className="score-bars">
+              {categoryBreakdown(result.scoring.scored_qualities).map((c) => (
+                <ScoreBar key={c.category} label={c.label} weight={`${c.matched}/${c.total}`} score={c.score} />
+              ))}
+            </div>
+          )}
 
           <div className="fit-cols">
             <div>
