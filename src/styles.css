@@ -49,7 +49,7 @@ a { color: inherit; }
 /* UI chrome renders as <button> in the SPA and as <a> on the server-rendered pages —
    these are affordances, never prose, so they never carry an underline either way.
    (.richtext a keeps its underline; prose links are the exception, not these.) */
-.hdr-name, .prow, .chip, .btn, .badge, .obslink { text-decoration: none; }
+.hdr-name, .prow, .chip, .btn, .badge, .obslink, .src { text-decoration: none; }
 a.chip, a.badge { display: inline-block; }
 
 /* paper grain — very subtle warmth */
@@ -175,6 +175,11 @@ body.voice-sans .prose.small { font-size: 16px; }
   background: var(--paper-2); border: 1px solid var(--hair);
   color: var(--ink-2);
 }
+/* A publication citation renders as a linked pill (resume-agent-web#34) instead
+   of a plain span — same box, but it's an <a> to canonical_url (the shared
+   text-decoration reset lives with the rest of the UI-chrome-as-<a> list above). */
+a.src { transition: border-color .14s; }
+a.src:hover { border-color: var(--ink-faint); }
 .followups { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
 /* Follow-up chips carry long backend questions — let them wrap instead of forcing
    a wide nowrap pill that overflows narrow viewports (and scrolls the whole page). */

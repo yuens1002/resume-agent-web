@@ -94,7 +94,7 @@ export function Turn({
                   {turn.render === 'work' && <WorkResult projectSlugs={turn.projectSlugs} sources={turn.sources} onOpen={onOpen} />}
                   {turn.render === 'fit' && <MatchResume />}
                   {turn.render === 'about' && <AboutResult />}
-                  <SourcePills sources={turn.sources} />
+                  <SourcePills sources={turn.sources} publications={turn.publications} />
                   <FollowupChips items={turn.followups} shownProjects={turn.projectSlugs} onAsk={onAsk} />
                 </div>
               )}

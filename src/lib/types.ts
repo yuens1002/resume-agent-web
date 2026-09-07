@@ -84,6 +84,25 @@ export interface QueryResponse {
   // Drives the "Run the full fit check" follow-up chip (resume-agent-web#26);
   // never re-derived from question/answer text on this side.
   fit_question?: boolean
+  // Published pieces this answer cites (resume-agent#177), the parallel of
+  // project_slugs for publications. Every field is read from the profile
+  // record server-side, never from the model's prose — see resume-agent's
+  // src/lib/publication-citations.ts. Optional like project_slugs above:
+  // this app points at any resume-agent backend, including one that
+  // predates the field (resume-agent-web#34).
+  publications?: PublicationCitation[]
+}
+
+// One published piece cited by a /query answer (resume-agent#177). Mirrors
+// resume-agent's PublicationCitation — sources[] entries for a cited
+// publication take the form `publications.<slug>` (see resolvePublicationPill
+// in lib/answer.ts), and this is what that slug resolves to.
+export interface PublicationCitation {
+  slug: string
+  title: string
+  platform: string
+  canonical_url: string
+  date: string
 }
 
 // ── Backend: GET /verify/git-evidence?slug= ──
@@ -211,6 +230,7 @@ export interface Turn {
   confidence: 'high' | 'medium' | 'low'
   sources: string[]
   projectSlugs: string[]
+  publications: PublicationCitation[]
   followups: string[]
   render: RenderKind
   pending: boolean
