@@ -1,5 +1,7 @@
 import type { ButtonHTMLAttributes, AnchorHTMLAttributes, ReactNode } from 'react'
 import { Icon } from './Icon.tsx'
+import { resolvePublicationPill } from '../lib/answer.ts'
+import type { PublicationCitation } from '../lib/types.ts'
 
 /* ── Btn — solid (default) or ghost; renders <button> or <a href> ── */
 type BtnBase = { variant?: 'solid' | 'ghost'; icon?: string; iconLeft?: string; children: ReactNode }
@@ -157,16 +159,29 @@ export function ScoreBar({ label, weight, score }: { label: string; weight: stri
 }
 
 /* ── SourcePills + FollowupChips — revealed under an answer ── */
-export function SourcePills({ sources }: { sources: string[] }) {
+// A publication citation (resume-agent-web#34) renders as its title, linked to
+// its canonical_url, instead of the raw `publications.<slug>` path — the only
+// channel this app has for that link, since it requests conversational style
+// (no prose Sources: block) and sanitizeAnswer strips one anyway. Falls back
+// to the raw string for anything else, including an older backend with no
+// `publications` envelope — see resolvePublicationPill.
+export function SourcePills({ sources, publications = [] }: { sources: string[]; publications?: PublicationCitation[] }) {
   if (!sources.length) return null
   return (
     <div className="sources">
       <span className="lbl">sources</span>
-      {sources.map((s) => (
-        <span key={s} className="src">
-          {s}
-        </span>
-      ))}
+      {sources.map((s) => {
+        const { label, href } = resolvePublicationPill(s, publications)
+        return href ? (
+          <a key={s} className="src" href={href} target="_blank" rel="noopener noreferrer">
+            {label}
+          </a>
+        ) : (
+          <span key={s} className="src">
+            {label}
+          </span>
+        )
+      })}
     </div>
   )
 }

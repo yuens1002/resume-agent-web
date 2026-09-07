@@ -102,7 +102,7 @@ export function App() {
     if (FIT_CHIP_RE.test(q) || q === FIT_FOLLOWUP_CHIP_TEXT) {
       setTurns((prev) => [
         ...prev,
-        { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], projectSlugs: [], followups: [], render: 'fit', pending: false },
+        { key, q, answer: FIT_INTRO, confidence: 'high', sources: [], projectSlugs: [], publications: [], followups: [], render: 'fit', pending: false },
       ])
       return
     }
@@ -124,6 +124,7 @@ export function App() {
           confidence: 'high',
           sources: [],
           projectSlugs: topSlugs,
+          publications: [],
           followups: remaining > 0 ? [remainingProjectsFollowup(first, remaining)] : [],
           render: 'work',
           pending: false,
@@ -160,6 +161,7 @@ export function App() {
           confidence: 'high',
           sources: [],
           projectSlugs: nextSlugs,
+          publications: [],
           followups: stillRemaining > 0 ? [remainingProjectsFollowup(first, stillRemaining)] : [],
           render: 'work',
           pending: false,
@@ -170,7 +172,7 @@ export function App() {
 
     setTurns((prev) => [
       ...prev,
-      { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], followups: [], render: resolveRender(q), pending: true },
+      { key, q, answer: '', confidence: 'high', sources: [], projectSlugs: [], publications: [], followups: [], render: resolveRender(q), pending: true },
     ])
     askApi(q, context)
       .then((r) => {
@@ -187,6 +189,7 @@ export function App() {
                   confidence: isFitIntent ? 'high' : r.confidence,
                   sources: isFitIntent ? [] : r.sources ?? [],
                   projectSlugs: isFitIntent ? [] : r.project_slugs ?? [],
+                  publications: isFitIntent ? [] : r.publications ?? [],
                   render: deriveRender(t.render, r.project_slugs, r.action_intent),
                   followups: isFitIntent
                     ? []
