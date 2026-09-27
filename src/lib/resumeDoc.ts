@@ -73,14 +73,21 @@ const PRINT_RULES: [string, string][] = [
 const printRules = (scope: string): string =>
   PRINT_RULES.map(([sel, decl]) => `${scope}${sel}{${decl}}`).join('')
 
-/** Lowers `--s` until an offscreen print-layout copy of the page fits one printed page. */
+/**
+ * Lowers `--s` until an offscreen print-layout copy of the page fits one printed page.
+ * Runs on load and again on `beforeprint`, where print media may already apply: the copy
+ * must stay laid out then (never `display:none` under print), and a copy that measures 0
+ * keeps the scale already set rather than resetting it.
+ */
 const FIT_SCRIPT = `<script>(function(){
   var H=${PRINT_HEIGHT_PX},MIN=${MIN_PRINT_SCALE},STEP=0.02,root=document.documentElement;
   function fit(){
     var paper=document.querySelector('.paper');if(!paper)return;
     var box=document.createElement('div');box.className='measure';box.setAttribute('aria-hidden','true');
     var copy=paper.cloneNode(true);box.appendChild(copy);document.body.appendChild(box);
+    var prev=root.style.getPropertyValue('--s');
     var s=1;root.style.setProperty('--s','1');
+    if(!copy.offsetHeight){if(prev)root.style.setProperty('--s',prev);else root.style.removeProperty('--s');box.remove();return}
     while(copy.offsetHeight>H&&s-STEP>=MIN-1e-9){s-=STEP;root.style.setProperty('--s',s.toFixed(2))}
     box.remove();
   }
@@ -127,7 +134,7 @@ const DOC_CSS = `
   .edu .co{font-size:13.5px}
   .measure{position:absolute;left:-10000px;top:0;visibility:hidden}
   ${printRules('.measure ')}
-  @media print{body{background:#fff}.bar,.measure{display:none}${printRules('')}@page{size:letter;margin:0.5in}}
+  @media print{body{background:#fff}.bar{display:none}${printRules('')}@page{size:letter;margin:0.5in}}
 `
 
 /** Shown immediately in the synchronously-opened tab while /resume runs. */
