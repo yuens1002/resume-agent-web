@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- 2026-09-27 — fix(resume): printable résumé follows the backend's résumé conventions and fits one page (issue #36)
+  - Skills print as one labelled, comma-separated row per category; an older flat list prints as a single row
+  - LinkedIn left out of the printed header
+  - Print-only layout at US Letter with 0.5in margins; a fit step scales type and spacing down, to a floor, until the résumé fits one page
+  - Employment dates print as month and year ("Jan 2023 – Aug 2023", "Present"); on-screen cards keep the compact year style
+  - Rubric badge shows the score out of 5, the backend rubric's real maximum
+
 - 2026-09-06 — feat(query): render the `publications` envelope field as linked source pills — resume-agent's `/query` now returns a `publications[]` envelope (the parallel of `project_slugs`) for each publication an answer cites, resolved server-side from the profile record; this is the only channel that reaches a browser visitor, since this app requests conversational style (no prose `Sources:` block) and `sanitizeAnswer` strips one anyway. `SourcePills` now resolves a `sources[]` entry of the form `publications.<slug>` against that envelope and renders the piece's title, linked to its `canonical_url`, instead of the raw path — falling back to the raw string whenever it can't resolve confidently (unknown slug, older backend with no envelope, non-publication source). Slug matching mirrors the backend's own longest-slug-prefix resolution rather than splitting at the first dot, since `upsert_publication` allows a dotted slug and a naive split could link the wrong publication; `canonical_url` is also required to be `http(s)` before it's ever rendered as an `href` (issue #34)
 
 - 2026-08-12 — fix(match): handle new `/match` scoring response shape — the backend's `POST /match` replaced the fixed `scoring:{skills,experience,domain}` object (each carrying a 50/30/20-weighted `.score`) with a variable-length `required_qualities[]`/`scored_qualities[]` list, each quality tagged by category (skill/experience/domain), importance, verdict, and evidence grade; the fit-check UI still destructured the old shape and would throw the next time a real JD was submitted. `types.ts`'s `MatchScoring` now mirrors the live shape, and the score-bars section groups `scored_qualities` by whichever categories a given JD actually raises, captioning each bar `matched/total` instead of a fixed weight — no more hardcoded 50%/30%/20% (issue #32)
